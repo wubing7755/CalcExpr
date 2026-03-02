@@ -22,23 +22,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <ctype.h>
 #include "token.h"
+#include "calculator.h"
 
 /*-----------------------------------------------------------------------------
  * 函数声明
  *---------------------------------------------------------------------------*/
-
-/**
- * evaluate - 表达式求值主函数
- * 
- * 声明在 calculator.c 中实现
- * 
- * @param expression 输入的数学表达式字符串
- * @param result 用于存储计算结果的指针
- * @return 0 表示成功，非0表示出错
- */
-extern int evaluate(const char* expression, double* result);
 
 /**
  * printWelcome - 打印欢迎信息
