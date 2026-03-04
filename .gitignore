@@ -68,3 +68,17 @@ dkms.conf
 
 # CMake
 build/
+
+# ========== Incredibuild ==========
+*.recipe
+*.tlog
+*.dat
+*.ib_chunk
+*.ib_manifest
+*.ib_log*
+BuildConsole/
+IB_temp/
+IncrementalBuild/
+.ib_cache/
+x64/
+x86/
