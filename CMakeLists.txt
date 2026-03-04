@@ -1,47 +1,79 @@
 # CMakeLists.txt - C语言计算器项目构建配置
-# 
-# 这是一个使用CMake管理的C语言练习项目
-# 
+#
 # 使用方法：
 #   1. mkdir build && cd build
 #   2. cmake -G "MinGW Makefiles" ..
-#   3. cmake --build .
-#   4. ./calculator.exe
+#      或 cmake -G "Visual Studio 17 2022" ..
+#   3. cmake --build . --config Release
+#   4. 运行生成的 calculator.exe
 
-# 如果之前有build目录，先删除它再重新配置！
+# ============================================================
 
-# CMakeLists.txt - C语言计算器项目构建配置
-cmake_minimum_required(VERSION 3.10)
+# CMake 最低版本要求
+cmake_minimum_required(VERSION 3.15)
 
+# 项目名称、版本号和语言
 project(CExpressionCalculator VERSION 1.0 LANGUAGES C)
 
-# 设置C语言标准
-set(CMAKE_C_STANDARD 11)
+# ============================================================
+# 设置默认构建类型（仅对单配置生成器有效，如 MinGW）
+# ============================================================
+if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+endif()
+
+# ============================================================
+# 设置 C 语言标准
+# ============================================================
+set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS OFF)
 
-# 编译选项
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
-
-# ===== .c 源文件 =====
+# ============================================================
+# 源文件列表
+# ============================================================
 set(SOURCES
     main.c
     calculator.c
 )
 
+# ============================================================
 # 创建可执行文件
+# ============================================================
 add_executable(calculator ${SOURCES})
 
-# ===== 头文件目录 =====
-# 头文件在同一目录，需要指定include目录
-target_include_directories(calculator PRIVATE ${CMAKE_SOURCE_DIR})
+# ============================================================
+# 头文件目录
+# ============================================================
+target_include_directories(calculator
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+)
 
-if(UNIX AND NOT APPLE)
-    target_link_libraries(calculator m)
+# ============================================================
+# 编译选项（现代 CMake 推荐写法）
+# ============================================================
+if(MSVC)
+    target_compile_options(calculator PRIVATE
+        /W4         # 高警告级别
+        /permissive- # 严格标准模式
+    )
+else()
+    target_compile_options(calculator PRIVATE
+        -Wall
+        -Wextra
+        -Wpedantic
+    )
 endif()
 
+# ============================================================
 # 打印配置信息
+# ============================================================
+message(STATUS "")
 message(STATUS "=== CExpressionCalculator Build Config ===")
 message(STATUS "C Compiler: ${CMAKE_C_COMPILER}")
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
-message(STATUS "Calculator: ${CMAKE_CURRENT_BINARY_DIR}/calculator${CMAKE_EXECUTABLE_SUFFIX}")
+message(STATUS "C Standard: ${CMAKE_C_STANDARD}")
+message(STATUS "Output dir: ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
 message(STATUS "==========================================")
+message(STATUS "")
