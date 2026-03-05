@@ -5,7 +5,7 @@
       "name": "Debug Calculator",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/calculator",
+      "program": "${workspaceFolder}/build/bin/calculator",
       "args": [],
       "cwd": "${workspaceFolder}",
       "stopAtEntry": false,
