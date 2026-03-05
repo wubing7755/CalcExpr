@@ -65,6 +65,7 @@ set(CMAKE_C_EXTENSIONS OFF)
 set(CORE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/main.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/calculator.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/logger.c
 )
 
 # 平台特定源文件

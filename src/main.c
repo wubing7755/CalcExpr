@@ -24,43 +24,17 @@
 #include <string.h>
 #include <ctype.h>
 #include "calculator.h"
+#include "platform.h"
+#include "logger.h"
 
 /*-----------------------------------------------------------------------------
  * 函数声明
  *---------------------------------------------------------------------------*/
 
-#ifdef _WIN32
-#include <windows.h>
-#include <io.h>
-
-static void enable_utf8_console(void)
-{
-    // 先判断是否在控制台中运行
-    if (_isatty(_fileno(stdout)))
-    {
-        UINT output_cp = GetConsoleOutputCP();
-        UINT input_cp  = GetConsoleCP();
-
-        // 只有当不是 UTF-8 时才修改
-        if (output_cp != 65001)
-        {
-            SetConsoleOutputCP(65001);
-        }
-
-        if (input_cp != 65001)
-        {
-            SetConsoleCP(65001);
-        }
-    }
-}
-#else
-#include <locale.h>
-
-static void enable_utf8_console(void)
-{
-    setlocale(LC_ALL, "");
-}
-#endif
+/* 
+ * UTF-8 控制台设置已移至 platform 模块
+ * 统一通过 platform_enable_utf8() 调用
+ */
 
 /**
  * printWelcome - 打印欢迎信息
@@ -69,6 +43,8 @@ static void enable_utf8_console(void)
  */
 void printWelcome(void)
 {
+    logger_log(LOG_INFO, "%s", "Test Logger: This is an info message.");
+    
     printf("===========================================\n");
     printf("       C语言控制台计算器 v1.0\n");
     printf("===========================================\n");
@@ -153,8 +129,15 @@ void printHelp(void)
 
 int main(void)
 {
-    enable_utf8_console();
+    // 初始化平台
+    platform_init();
     
+    // 启用 UTF-8 控制台输出
+    platform_enable_utf8();
+    
+    // 初始化日志系统，设置默认日志级别为 INFO
+    logger_init(LOG_INFO);
+
     // 打印欢迎信息
     printWelcome();
     
@@ -201,6 +184,9 @@ int main(void)
             printf("\n");
         }
     }
+    
+    // 清理平台资源
+    platform_cleanup();
     
     return 0;
 }

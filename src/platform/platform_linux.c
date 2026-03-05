@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <stdio.h>
+#include <locale.h>
 
 /* ========================================================================
  * 公共函数实现
@@ -47,4 +48,10 @@ uint64_t platform_get_tick_ms(void)
 void platform_sleep_ms(uint32_t ms)
 {
     usleep(ms * 1000);  /* usleep 接受微秒 */
+}
+
+void platform_enable_utf8(void)
+{
+    // 设置本地化以支持 UTF-8
+    setlocale(LC_ALL, "");
 }

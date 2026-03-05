@@ -82,4 +82,11 @@ uint64_t platform_get_tick_ms(void);
  */
 void platform_sleep_ms(uint32_t ms);
 
+/**
+ * @brief 启用 UTF-8 控制台输出
+ * 
+ * 确保控制台正确输出 UTF-8 编码的中文字符
+ */
+void platform_enable_utf8(void);
+
 #endif /* PLATFORM_H */

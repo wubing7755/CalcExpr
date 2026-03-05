@@ -34,6 +34,11 @@
 #include "token.h"
 
 /*-----------------------------------------------------------------------------
+ * 函数声明
+ *---------------------------------------------------------------------------*/
+double parseExpression(void);
+
+/*-----------------------------------------------------------------------------
  * 全局变量定义
  *---------------------------------------------------------------------------*/
 char g_inputExpr[256] = {0};   // 用户输入的表达式
@@ -51,7 +56,10 @@ Token g_currentToken;         // 当前Token
  */
 void skipWhitespace(void)
 {
-    while (g_inputExpr[g_pos] == ' ' || g_inputExpr[g_pos] == '\t') {
+    const char* p = g_inputExpr + g_pos;
+
+    while (*p == ' ' || *p == '\t') {
+        p++;
         g_pos++;
     }
 }
@@ -89,53 +97,60 @@ void getNextToken(void)
 
     // 先调用 skipWhitespace 跳过空格
     skipWhitespace();
-    
+
     // 获取当前字符
-    char c = g_inputExpr[g_pos];
+    const char* pStart = g_inputExpr + g_pos;
+    char c = *pStart;
     
     // 字符串结束
     if (c == '\0') {
         g_currentToken.type = TOKEN_END;
+        return;
     }
-    // 数字
-    else if (isdigit(c)) {
+
+    // 数字 - 使用指针实现
+    if (isdigit(c)) {
         char numStr[64] = {0};
-        int i = 0;
-        while (isdigit(g_inputExpr[g_pos]) || g_inputExpr[g_pos] == '.') {
-            numStr[i++] = g_inputExpr[g_pos++];
+        char* p = numStr;  // 指针 p 指向 numStr
+        
+        // 读取所有连续的数字字符和小数点
+        // 使用指针算术访问字符
+        while (isdigit(*(g_inputExpr + g_pos)) || *(g_inputExpr + g_pos) == '.') {
+            *p++ = *(g_inputExpr + g_pos);
+            g_pos++;
         }
+        *p = '\0';  // 字符串结束符
+        
+        // 转换为 double 值
         g_currentToken.type = TOKEN_NUMBER;
         g_currentToken.value = atof(numStr);
+        
+        return;  // 数字已经处理完，直接返回
     }
 
     // 添加运算符和括号的识别
     switch (c) {
         case '+':
             g_currentToken.type = TOKEN_PLUS;
-            g_pos++;
             break;
         case '-':
             g_currentToken.type = TOKEN_MINUS;
-            g_pos++;
             break;
         case '*':
             g_currentToken.type = TOKEN_MUL;
-            g_pos++;
             break;
         case '/':
             g_currentToken.type = TOKEN_DIV;
-            g_pos++;
             break;
         case '(':
             g_currentToken.type = TOKEN_LPAREN;
-            g_pos++;
             break;
         case ')':
             g_currentToken.type = TOKEN_RPAREN;
-            g_pos++;
             break;
     }
 
+    g_pos++;  // 移动到下一个字符
     return;
 }
 
@@ -160,21 +175,21 @@ void getNextToken(void)
  */
 double parseFactor(void)
 {
-    // TODO: 检查 TOKEN_NUMBER
-    //   if (g_currentToken.type == TOKEN_NUMBER) {
-    //       double val = g_currentToken.value;
-    //       getNextToken();  // 读取下一个Token
-    //       return val;
-    //   }
+    // 检查 TOKEN_NUMBER
+    if (g_currentToken.type == TOKEN_NUMBER) {
+        double val = g_currentToken.value;
+        getNextToken();
+        return val;
+    }
     
-    // TODO: 检查左括号
-    //   else if (g_currentToken.type == TOKEN_LPAREN) {
-    //       getNextToken();  // 跳过 '('
-    //       double val = parseExpression();  // 递归解析括号内的表达式
-    //       // TODO: 检查是否有对应的右括号
-    //       // if (g_currentToken.type == TOKEN_RPAREN) { ... }
-    //       return val;
-    //   }
+    // 检查左括号
+      if (g_currentToken.type == TOKEN_LPAREN) {
+          getNextToken();  // 跳过 '('
+          double val = parseExpression();  // 递归解析括号内的表达式
+          // TODO: 检查是否有对应的右括号
+          // if (g_currentToken.type == TOKEN_RPAREN) { ... }
+          return val;
+      }
     
     // 错误处理
     printf("Error: Unexpected token in factor\n");
