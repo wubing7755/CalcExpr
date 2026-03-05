@@ -151,7 +151,7 @@ void printHelp(void)
  * 主函数 - 程序入口
  *---------------------------------------------------------------------------*/
 
-int main(int argc, char* argv[])
+int main(void)
 {
     enable_utf8_console();
     

@@ -3,6 +3,12 @@
  * @brief Linux 平台特定实现
  */
 
+/* 
+ * 定义 POSIX 特性宏以启用 clock_gettime 和 usleep
+ * 必须在所有 include 之前定义
+ */
+#define _POSIX_C_SOURCE 199309L
+
 #include "platform.h"
 #include <unistd.h>
 #include <time.h>

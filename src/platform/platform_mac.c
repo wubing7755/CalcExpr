@@ -3,6 +3,12 @@
  * @brief macOS 平台特定实现
  */
 
+/* 
+ * 定义 POSIX 特性宏以启用 usleep
+ * 必须在所有 include 之前定义
+ */
+#define _POSIX_C_SOURCE 200809L
+
 #include "platform.h"
 #include <unistd.h>
 #include <mach/mach_time.h>

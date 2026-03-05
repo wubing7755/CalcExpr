@@ -27,6 +27,7 @@
  ******************************************************************************/
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <ctype.h>
@@ -277,8 +278,8 @@ double parseExpression(void)
  */
 int evaluate(const char* expression, double* result)
 {
-    // 复制表达式到全局变量
-    strncpy_s(g_inputExpr, 256, expression, 255);
+    // 复制表达式到全局变量 (跨平台兼容)
+    strncpy(g_inputExpr, expression, 255);
     g_inputExpr[255] = '\0';
     
     // 初始化位置
