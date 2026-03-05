@@ -1,2 +1,134 @@
 # CExpression-Calculator
-an expression calculator written in C language
+
+一个用 C 语言编写的表达式计算器，支持基本数学运算和括号优先级。
+
+[![C Version](https://img.shields.io/badge/C-C11-blue)](https://en.wikipedia.org/wiki/C_(programming_language))
+[![CMake](https://img.shields.io/badge/CMake-3.10+-blue)](https://cmake.org/)
+[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+[![EN](https://img.shields.io/badge/English-blue)](README-en.md)
+[![ES](https://img.shields.io/badge/Español-yellow)](README-es.md)
+
+🌐 **选择语言**: [English](README-en.md) | [Español](README-es.md) | **中文**
+
+## 📚 项目简介
+
+这是一个用于学习 C 语言的练习项目，采用**递归下降解析器（Recursive Descent Parser）**算法实现数学表达式求值。通过这个项目，你可以学习到：
+
+- C 语言基础编程
+- 递归下降算法
+- 词法分析基础
+- 模块化代码设计
+
+## ✨ 功能特性
+
+- ✅ 加法 (+)、减法 (-)、乘法 (*)、除法 (/)
+- ✅ 括号优先级处理
+- ✅ 运算符优先级（乘除 > 加减）
+- ✅ 支持小数
+- ✅ 命令行交互界面
+
+## 🛠️ 技术栈
+
+- **编程语言**: C (C11)
+- **构建工具**: CMake / GCC
+- **算法**: 递归下降解析器
+
+## 📁 文件结构
+
+```
+CExpressionCalculator/
+├── main.c           # 主程序入口
+├── calculator.c     # 计算器核心逻辑（待实现）
+├── calculator.h     # 计算器头文件
+├── token.h          # Token 类型定义
+├── CMakeLists.txt   # CMake 构建配置
+└── README.md        # 项目说明
+```
+
+## 🚀 快速开始
+
+### 编译项目
+
+#### 方法一：使用 GCC
+
+```bash
+gcc main.c calculator.c -o calculator.exe -lm
+```
+
+#### 方法二：使用 CMake
+
+```bash
+# 创建构建目录
+mkdir build && cd build
+
+# 配置项目（指定 MinGW）
+cmake -G "MinGW Makefiles" ..
+
+# 编译
+cmake --build .
+```
+
+### 运行程序
+
+```bash
+./calculator.exe
+```
+
+### 使用示例
+
+```
+请输入表达式> 2+3*4
+表达式: 2+3*4
+结果:   14.00
+
+请输入表达式> (2+3)*4
+表达式: (2+3)*4
+结果:   20.00
+
+请输入表达式> (3-5)*6
+表达式: (3-5)*6
+结果:   -12.00
+```
+
+## 📖 学习内容
+
+### 1. 递归下降算法
+
+数学表达式的递归定义：
+
+```
+表达式 = 项 { (+|-) 项 }
+项     = 因子 { (*|/) 因子 }
+因子   = 数字 | '(' 表达式 ')'
+```
+
+这种递归定义天然支持运算符优先级！
+
+### 2. 词法分析 (Lexer)
+
+将输入字符串分解为 Token（标记）：
+- 数字: `123`, `45.67`
+- 运算符: `+`, `-`, `*`, `/`
+- 括号: `(`, `)`
+
+### 3. 模块化设计
+
+- `token.h` - Token 类型定义
+- `calculator.c` - 计算逻辑
+- `main.c` - 用户交互
+
+## 🤝 如何贡献
+
+1. Fork 本仓库
+2. 创建特性分支 (`git checkout -b feature/amazing-feature`)
+3. 提交更改 (`git commit -m 'Add some amazing feature'`)
+4. 推送到分支 (`git push origin feature/amazing-feature`)
+5. 开启 Pull Request
+
+## 许可证
+
+本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
+
+---
+
+⭐ 如果这个项目对你有帮助，请 star 支持！
