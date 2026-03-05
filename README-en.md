@@ -62,7 +62,11 @@ gcc main.c calculator.c -o calculator.exe -lm
 mkdir build && cd build
 
 # Configure project (specify MinGW)
-cmake -G "MinGW Makefiles" ..
+cmake -G "MinGW Makefiles" ..   # Windows
+cmake ..                        # Linux / macOS
+
+# Specify the build type（Debug / Release）
+cmake -DCMAKE_BUILD_TYPE=Debug ..
 
 # Build
 cmake --build .
@@ -71,7 +75,8 @@ cmake --build .
 ### Run the Program
 
 ```bash
-./calculator.exe
+./calculator.exe    # Windows
+./calculator        # Linux / macOS
 ```
 
 ### Usage Example
