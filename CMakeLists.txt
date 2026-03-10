@@ -1,5 +1,5 @@
 # =============================================================================
-# CExpressionCalculator - CMake 构建配置 (企业级跨平台)
+# CalcExpr - CMake 构建配置 (企业级跨平台)
 # =============================================================================
 #
 # 支持的平台和编译器:
@@ -31,10 +31,10 @@ cmake_minimum_required(VERSION 3.15)
 # =============================================================================
 # 项目信息
 # =============================================================================
-project(CExpressionCalculator 
+project(CalcExpr 
     VERSION 1.0.0
     DESCRIPTION "A cross-platform expression calculator written in C"
-    HOMEPAGE_URL "https://github.com/wubing7755/CExpression-Calculator"
+    HOMEPAGE_URL "https://github.com/wubing7755/CalcExpr"
     LANGUAGES C
 )
 
@@ -168,7 +168,7 @@ install(TARGETS calculator
 # =============================================================================
 message(STATUS "")
 message(STATUS "============================================================")
-message(STATUS "  CExpressionCalculator - Build Configuration")
+message(STATUS "  CalcExpr - Build Configuration")
 message(STATUS "============================================================")
 message(STATUS "  Version:        ${PROJECT_VERSION}")
 message(STATUS "  Platform:       ${CMAKE_SYSTEM_NAME}")

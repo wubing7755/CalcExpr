@@ -1,4 +1,4 @@
-# CExpression-Calculator
+# CalcExpr
 
 Una calculadora de expresiones matemáticas escrita en lenguaje C, que soporta operaciones básicas y prioridad de paréntesis.
 
@@ -36,7 +36,7 @@ Este es un proyecto de práctica para aprender el lenguaje C, implementando la e
 ## 📁 Estructura de Archivos
 
 ```
-CExpressionCalculator/
+CalcExpr/
 ├── main.c           # Punto de entrada del programa principal
 ├── calculator.c     # Lógica central de la calculadora (por implementar)
 ├── calculator.h     # Archivo de encabezado de la calculadora

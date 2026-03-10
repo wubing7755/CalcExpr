@@ -1,4 +1,4 @@
-# CExpression-Calculator
+# CalcExpr
 
 一个用 C 语言编写的表达式计算器，支持基本数学运算和括号优先级。
 
@@ -36,7 +36,7 @@
 ## 📁 文件结构
 
 ```
-CExpressionCalculator/
+CalcExpr/
 ├── main.c           # 主程序入口
 ├── calculator.c     # 计算器核心逻辑（待实现）
 ├── calculator.h     # 计算器头文件
