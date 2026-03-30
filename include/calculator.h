@@ -1,6 +1,7 @@
 #ifndef CALCULATOR_H
 #define CALCULATOR_H
 
+#include <stdbool.h>
 #include <stddef.h>
 
 typedef enum {
@@ -14,7 +15,26 @@ typedef enum {
     CALC_ERROR_RECURSION_LIMIT
 } CalcError;
 
-CalcError evaluate(const char* expression, double* result, size_t* err_pos);
+typedef struct {
+    unsigned step_index;
+    const char* message;
+    double elapsed_ms;
+} CalcStepInfo;
+
+typedef void (*CalcStepCallback)(void* user_data, const CalcStepInfo* step);
+
+typedef struct {
+    unsigned max_recursion_depth;
+    bool measure_step_time;
+    CalcStepCallback on_step;
+    void* user_data;
+} CalcEvalOptions;
+
+void calcEvalOptionsInit(CalcEvalOptions* options);
+CalcError evaluate(const char* expression,
+                   const CalcEvalOptions* options,
+                   double* result,
+                   size_t* err_pos);
 const char* calcGetErrorMessage(CalcError err);
 
 /* Backward-compatible alias used by existing code. */

@@ -4,6 +4,9 @@
 #include <stddef.h>
 #include "calculator.h"
 
-CalcError parserEvaluateExpression(const char* expression, double* result, size_t* err_pos);
+CalcError parserEvaluateExpression(const char* expression,
+                                   const CalcEvalOptions* options,
+                                   double* result,
+                                   size_t* err_pos);
 
 #endif

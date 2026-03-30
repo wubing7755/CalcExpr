@@ -32,7 +32,21 @@ const char* parserGetErrorMessage(CalcError err)
     return calcGetErrorMessage(err);
 }
 
-CalcError evaluate(const char* expression, double* result, size_t* err_pos)
+void calcEvalOptionsInit(CalcEvalOptions* options)
+{
+    if (options == NULL) {
+        return;
+    }
+    options->max_recursion_depth = 0U;
+    options->measure_step_time = false;
+    options->on_step = NULL;
+    options->user_data = NULL;
+}
+
+CalcError evaluate(const char* expression,
+                   const CalcEvalOptions* options,
+                   double* result,
+                   size_t* err_pos)
 {
     if (expression == NULL || *expression == '\0' || result == NULL) {
         if (err_pos != NULL) {
@@ -41,5 +55,5 @@ CalcError evaluate(const char* expression, double* result, size_t* err_pos)
         return CALC_ERROR_NULL_EXPR;
     }
 
-    return parserEvaluateExpression(expression, result, err_pos);
+    return parserEvaluateExpression(expression, options, result, err_pos);
 }

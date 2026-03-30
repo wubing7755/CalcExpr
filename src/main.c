@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "calculator.h"
+#include "command.h"
 #include "logger.h"
 #include "platform.h"
 
@@ -30,6 +31,9 @@ static void printHelp(void)
     logger_log(LOG_INFO, "- 直接输入数学表达式，例如: 2+3*4\n");
     logger_log(LOG_INFO, "- 使用括号改变优先级，例如: (2+3)*4\n");
     logger_log(LOG_INFO, "- 支持小数和科学计数法，例如: 1e-3 * 5\n\n");
+    logger_log(LOG_INFO, "- 输入 'show help' 查看全部命令\n");
+    logger_log(LOG_INFO, "- 输入 'show process' 开启计算过程输出\n");
+    logger_log(LOG_INFO, "- 输入 'hide process' 关闭计算过程输出\n\n");
 }
 
 static InputReadStatus readInputLine(char* input, size_t capacity)
@@ -64,23 +68,15 @@ static bool isValidExpression(const char* input)
     return false;
 }
 
-static bool equalsIgnoreCase(const char* a, const char* b)
+static void printProcessStep(void* user_data, const CalcStepInfo* step)
 {
-    while (*a != '\0' && *b != '\0') {
-        if (tolower((unsigned char)*a) != tolower((unsigned char)*b)) {
-            return false;
-        }
-        a++;
-        b++;
+    (void)user_data;
+    if (step->elapsed_ms > 0.0) {
+        logger_log(LOG_INFO, "  步骤%u: %s (耗时 %.3f ms)\n",
+                   step->step_index, step->message, step->elapsed_ms);
+    } else {
+        logger_log(LOG_INFO, "  步骤%u: %s\n", step->step_index, step->message);
     }
-    return *a == '\0' && *b == '\0';
-}
-
-static bool isExitCommand(const char* input)
-{
-    return equalsIgnoreCase(input, "quit") ||
-           equalsIgnoreCase(input, "exit") ||
-           equalsIgnoreCase(input, "q");
 }
 
 static void printResult(const char* expression, double result)
@@ -91,9 +87,12 @@ static void printResult(const char* expression, double result)
 
 int main(void)
 {
+    CommandState command_state;
+
     platform_init();
     platform_enable_utf8();
     logger_init(LOG_INFO);
+    commandStateInit(&command_state);
 
     printWelcome();
     printHelp();
@@ -122,14 +121,32 @@ int main(void)
             continue;
         }
 
-        if (isExitCommand(input)) {
-            logger_log(LOG_INFO, "感谢使用，再见！\n");
-            break;
+        {
+            const CommandResult cmd_result = commandDispatch(input, &command_state);
+            if (cmd_result != COMMAND_RESULT_NOT_COMMAND) {
+                if (command_state.should_exit) {
+                    logger_log(LOG_INFO, "感谢使用，再见！\n");
+                    break;
+                }
+                /* 命令已处理（含错误提示），不进入表达式求值。 */
+                continue;
+            }
         }
 
-        result = 0.0;
-        err_pos = 0;
-        err = evaluate(input, &result, &err_pos);
+        if (command_state.show_process) {
+            CalcEvalOptions options;
+            result = 0.0;
+            err_pos = 0;
+            logger_log(LOG_INFO, "计算过程:\n");
+            calcEvalOptionsInit(&options);
+            options.on_step = printProcessStep;
+            err = evaluate(input, &options, &result, &err_pos);
+        } else {
+            result = 0.0;
+            err_pos = 0;
+            err = evaluate(input, NULL, &result, &err_pos);
+        }
+
         if (err == CALC_OK) {
             printResult(input, result);
             continue;
