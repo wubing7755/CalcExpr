@@ -39,7 +39,6 @@
 #include <time.h>
 
 #include "lexer.h"
-#include "parser_debug.h"
 #include "debug.h"
 
 /* ========================================================================
@@ -88,6 +87,30 @@ typedef struct {
   } while (0)
 
 /* ========================================================================
+ * 调试宏（统一使用 debug.c/h 系统）
+ * ======================================================================== */
+
+/**
+ * @brief Parser 函数入口跟踪（带缩进的树结构）
+ */
+#define PARSER_DEBUG_ENTER(func)                                                \
+  DEBUG_IF(DEBUG_LEVEL_TRACE, DEBUG_MODULE_PARSER,                              \
+      fprintf(g_debug_output ? g_debug_output : stderr,                          \
+          "[PARSER] %*s%-4s %s()\n", parser->depth * 4, "", "│  ", func))
+
+/**
+ * @brief Parser 函数出口跟踪（仅标记，用于跟踪流）
+ */
+#define PARSER_DEBUG_EXIT(result)                                               \
+  DEBUG_TRACE_EXIT(DEBUG_MODULE_PARSER, (result))
+
+/**
+ * @brief Parser 错误调试
+ */
+#define PARSER_DEBUG_ERROR(fmt, ...)                                            \
+  DEBUG_ERROR("[PARSER] " fmt, ##__VA_ARGS__)
+
+/* ========================================================================
  * 函数原型声明（前向声明）
  * ======================================================================== */
 
@@ -114,27 +137,21 @@ static double evalMul(double a, double b, Parser *parser) {
   const double result = a * b;
   parser->step_index++;
   parserEmitStep(parser, "%.10g * %.10g = %.10g", a, b, result);
-  if (g_debug_level >= DEBUG_LEVEL_TRACE) {
-    printf("[PARSER] %*s%.10g * %.10g = %.10g\n",
-        parser->depth * 4, "", a, b, result);
-  }
+  DEBUG_PARSER("%*s%.10g * %.10g = %.10g", parser->depth * 4, "", a, b, result);
   return result;
 }
 
 static double evalDiv(double a, double b, Parser *parser, size_t err_pos) {
   if (fpclassify(b) == FP_ZERO) {
     parserSetError(parser, CALC_ERROR_DIV_BY_ZERO, err_pos);
-    PARSER_TRACE_ERROR(parser, "Division by zero at position %zu\n", err_pos);
+    PARSER_DEBUG_ERROR("Division by zero at position %zu", err_pos);
     return 0.0;
   }
 
   const double result = a / b;
   parser->step_index++;
   parserEmitStep(parser, "%.10g / %.10g = %.10g", a, b, result);
-  if (g_debug_level >= DEBUG_LEVEL_TRACE) {
-    printf("[PARSER] %*s%.10g / %.10g = %.10g\n",
-        parser->depth * 4, "", a, b, result);
-  }
+  DEBUG_PARSER("%*s%.10g / %.10g = %.10g", parser->depth * 4, "", a, b, result);
   return result;
 }
 
@@ -142,10 +159,7 @@ static double evalAdd(double a, double b, Parser *parser) {
   const double result = a + b;
   parser->step_index++;
   parserEmitStep(parser, "%.10g + %.10g = %.10g", a, b, result);
-  if (g_debug_level >= DEBUG_LEVEL_TRACE) {
-    printf("[PARSER] %*s%.10g + %.10g = %.10g\n",
-        parser->depth * 4, "", a, b, result);
-  }
+  DEBUG_PARSER("%*s%.10g + %.10g = %.10g", parser->depth * 4, "", a, b, result);
   return result;
 }
 
@@ -153,10 +167,7 @@ static double evalSub(double a, double b, Parser *parser) {
   const double result = a - b;
   parser->step_index++;
   parserEmitStep(parser, "%.10g - %.10g = %.10g", a, b, result);
-  if (g_debug_level >= DEBUG_LEVEL_TRACE) {
-    printf("[PARSER] %*s%.10g - %.10g = %.10g\n",
-        parser->depth * 4, "", a, b, result);
-  }
+  DEBUG_PARSER("%*s%.10g - %.10g = %.10g", parser->depth * 4, "", a, b, result);
   return result;
 }
 
@@ -230,7 +241,7 @@ static void parserEmitStep(Parser *parser, const char *fmt, ...) {
  * @return 计算结果
  */
 static double parserParsePrimary(Parser *parser) {
-  PARSER_TRACE_ENTER(parser, "parsePrimary");
+  PARSER_DEBUG_ENTER("parsePrimary");
 
   /* 情况 1：数字 */
   if (parser->lexer.current.type == TOKEN_NUMBER) {
@@ -240,7 +251,7 @@ static double parserParsePrimary(Parser *parser) {
     parserEmitStep(parser, "读取数字 %.10g", value);
 
     parserNextToken(parser);
-    PARSER_TRACE_EXIT(parser, "parsePrimary", value);
+    PARSER_DEBUG_EXIT(value);
     return value;
   }
 
@@ -254,7 +265,7 @@ static double parserParsePrimary(Parser *parser) {
     /* 递归深度检查 */
     if (parser->depth >= parser->max_depth) {
       parserSetError(parser, CALC_ERROR_RECURSION_LIMIT, lparen_pos);
-      PARSER_TRACE_EXIT(parser, "parsePrimary", 0.0);
+      PARSER_DEBUG_EXIT(0.0);
       return 0.0;
     }
 
@@ -266,19 +277,19 @@ static double parserParsePrimary(Parser *parser) {
     if (parser->lexer.current.type != TOKEN_RPAREN) {
       parserSetError(parser, CALC_ERROR_MISSING_RPAREN,
                      parser->lexer.current.start_pos);
-      PARSER_TRACE_EXIT(parser, "parsePrimary", 0.0);
+      PARSER_DEBUG_EXIT(0.0);
       return 0.0;
     }
 
     parserNextToken(parser); /* 消费 ')' */
-    PARSER_TRACE_EXIT(parser, "parsePrimary", value);
+    PARSER_DEBUG_EXIT(value);
     return value;
   }
 
   /* 情况 3：语法错误 */
   parserSetError(parser, CALC_ERROR_UNEXPECTED_TOKEN,
                  parser->lexer.current.start_pos);
-  PARSER_TRACE_EXIT(parser, "parsePrimary", 0.0);
+  PARSER_DEBUG_EXIT(0.0);
   return 0.0;
 }
 
@@ -297,7 +308,7 @@ static double parserParsePrimary(Parser *parser) {
  * @return 计算结果
  */
 static double parserParseUnary(Parser *parser) {
-  PARSER_TRACE_ENTER(parser, "parseUnary");
+  PARSER_DEBUG_ENTER("parseUnary");
 
   /* 检查是否有一元运算符（递归情况） */
   if (parser->lexer.current.type == TOKEN_PLUS ||
@@ -307,7 +318,7 @@ static double parserParseUnary(Parser *parser) {
     if (parser->depth >= parser->max_depth) {
       parserSetError(parser, CALC_ERROR_RECURSION_LIMIT,
                      parser->lexer.current.start_pos);
-      PARSER_TRACE_EXIT(parser, "parseUnary", 0.0);
+      PARSER_DEBUG_EXIT(0.0);
       return 0.0;
     }
 
@@ -326,13 +337,13 @@ static double parserParseUnary(Parser *parser) {
     parserEmitStep(parser, "%c%.10g = %.10g", op == TOKEN_MINUS ? '-' : '+',
                    operand, result);
 
-    PARSER_TRACE_EXIT(parser, "parseUnary", result);
+    PARSER_DEBUG_EXIT(result);
     return result;
   }
 
   /* 递归终止：调用下一层 */
   double result = parserParsePrimary(parser);
-  PARSER_TRACE_EXIT(parser, "parseUnary", result);
+  PARSER_DEBUG_EXIT(result);
   return result;
 }
 
@@ -349,7 +360,7 @@ static double parserParseUnary(Parser *parser) {
  * @return 计算结果
  */
 static double parserParseTerm(Parser *parser) {
-  PARSER_TRACE_ENTER(parser, "parseTerm");
+  PARSER_DEBUG_ENTER("parseTerm");
 
   double left = parserParseUnary(parser); /* 解析第一个操作数 */
   PARSER_CHECK();
@@ -376,7 +387,7 @@ static double parserParseTerm(Parser *parser) {
     }
   }
 
-  PARSER_TRACE_EXIT(parser, "parseTerm", left);
+  PARSER_DEBUG_EXIT(left);
   return left;
 }
 
@@ -393,7 +404,7 @@ static double parserParseTerm(Parser *parser) {
  * @return 计算结果
  */
 static double parserParseExpression(Parser *parser) {
-  PARSER_TRACE_ENTER(parser, "parseExpression");
+  PARSER_DEBUG_ENTER("parseExpression");
 
   double left = parserParseTerm(parser); /* 解析第一个操作数 */
   PARSER_CHECK();
@@ -418,7 +429,7 @@ static double parserParseExpression(Parser *parser) {
     }
   }
 
-  PARSER_TRACE_EXIT(parser, "parseExpression", left);
+  PARSER_DEBUG_EXIT(left);
   return left;
 }
 

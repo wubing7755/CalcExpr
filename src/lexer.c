@@ -14,9 +14,6 @@
 
 #include "calculator.h"
 #include "debug.h"
-#include "parser_debug.h"
-
-static bool g_lexer_debug_printed = false;
 
 static const char* tokenTypeName(TokenType type) {
     switch (type) {
@@ -37,7 +34,7 @@ static const char* tokenTypeName(TokenType type) {
  * ======================================================================== */
 
 void lexerDebugPrintAll(Lexer *lexer) {
-    if (g_debug_level < DEBUG_LEVEL_DEBUG) return;
+    if (g_debug_level < DEBUG_LEVEL_TRACE) return;
 
     TokenType saved_type = lexer->current.type;
     size_t saved_start = lexer->current.start_pos;
@@ -103,7 +100,6 @@ void lexerDebugPrintAll(Lexer *lexer) {
     lexer->err = saved_err;
     lexer->err_pos = saved_err_pos;
     lexer->pos = saved_pos;
-    g_lexer_debug_printed = true;
 }
 
 /* ========================================================================
@@ -146,7 +142,6 @@ void lexerInit(Lexer *lexer, const char *input) {
     lexer->current.value = 0.0;
     lexer->current.start_pos = 0;
     lexer->current.end_pos = 0;
-    g_lexer_debug_printed = false;
 }
 
 /* ========================================================================

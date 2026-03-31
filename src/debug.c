@@ -219,10 +219,15 @@ void debug_log(int level, unsigned module,
     char time_buf[16];
     timestamp(time_buf, sizeof(time_buf));
 
+    const char *color = level_color(level);
+    const char *reset = g_debug_color ? DEBUG_ANSI_RESET : "";
+
     /* 输出格式：[TIME] [LEVEL] [MODULE] func(): message */
-    fprintf(out, "[%s] %s %s %s(): ",
+    fprintf(out, "[%s] %s%s%s %s %s(): ",
             time_buf,
+            color,
             level_tag(level),
+            reset,
             module_tag(module),
             func);
 

@@ -8,7 +8,6 @@
 #include "debug.h"
 #include "logger.h"
 #include "platform.h"
-#include "parser_debug.h"
 
 #define INPUT_BUFFER_SIZE 1024U
 

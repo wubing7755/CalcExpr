@@ -263,10 +263,10 @@ void debug_trace(const char *file, int line, const char *func,
 
 /**
  * @brief Lexer 模块调试
- * @note 默认级别：DEBUG_LEVEL_DEBUG
+ * @note 默认级别：DEBUG_LEVEL_TRACE
  */
 #define DEBUG_LEXER(fmt, ...) \
-    DEBUG_LOG(DEBUG_LEVEL_DEBUG, DEBUG_MODULE_LEXER, fmt, ##__VA_ARGS__)
+    DEBUG_LOG(DEBUG_LEVEL_TRACE, DEBUG_MODULE_LEXER, fmt, ##__VA_ARGS__)
 
 /**
  * @brief Parser 模块调试
