@@ -176,6 +176,21 @@ ctest --test-dir build -R calc_tests_error --output-on-failure
 - `calculator.c` - 计算逻辑
 - `main.c` - 用户交互
 
+### 4. 调试系统
+
+项目提供了可开关的调试系统，用于学习递归下降解析器的执行过程。
+
+#### 调试级别
+
+| 级别 | 值 | 说明 |
+|------|------|------|
+| `PARSER_DEBUG_NONE` | 0 | 关闭所有调试输出 |
+| `PARSER_DEBUG_ERROR` | 1 | 错误信息 |
+| `PARSER_DEBUG_TOKEN` | 2 | Token 流转跟踪 |
+| `PARSER_DEBUG_CALL` | 4 | 函数调用进入/退出 |
+
+**注意**：这些值可以组合使用，如 `PARSER_DEBUG_ERROR | PARSER_DEBUG_CALL = 5`。
+
 ## 🤝 如何贡献
 
 1. Fork 本仓库

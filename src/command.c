@@ -4,7 +4,7 @@
  * 
  * ## 模块职责
  * 
- * 这个模块负责处理用户在控制台输入的特殊命令（如 "quit"、"show help" 等）。
+ * 这个模块负责处理用户在控制台输入的特殊命令（如 "/quit"、"show help" 等）。
  * 与数学表达式不同，这些命令不需要经过词法分析和语法分析。
  * 
  * ## 设计思路
@@ -63,7 +63,7 @@ typedef void (*CommandHandler)(CommandState* state);
  * 描述一个命令的所有必要信息。
  * 
  * ## 字段说明
- *   - syntax     : 命令语法，如 "show help"
+ *   - syntax     : 命令语法，如 "/show help"（不含前缀的原始格式）
  *   - description: 命令描述，用于帮助信息
  *   - tokens     : 命令分词后的词数组
  *   - token_count: 词的数量
@@ -167,21 +167,6 @@ static size_t tokenize(char* text, char* tokens[], size_t max_tokens)
     }
 
     return count;
-}
-
-/**
- * @brief 检查是否可能是命令
- * 
- * 用于快速排除明显不是命令的输入。
- * 命令必须以字母开头（如 "quit"、"show"）。
- * 数学表达式以数字开头（如 "2+3"），应该跳过命令处理。
- * 
- * @param token 要检查的词
- * @return 如果可能是命令返回 1，否则返回 0
- */
-static int isCandidateCommand(const char* token)
-{
-    return (token != NULL && isalpha((unsigned char)token[0]));
 }
 
 /* ========================================================================
@@ -378,25 +363,19 @@ CommandResult commandDispatch(const char* input, CommandState* state)
      * ---------------------------------------------------------------
      */
     token_count = tokenize(copy, tokens, COMMAND_MAX_TOKENS);
-    
+
     /* 无效输入（全是空白） */
     if (token_count == 0) {
         return COMMAND_RESULT_NOT_COMMAND;
     }
 
-    /* ---------------------------------------------------------------
-     * 步骤3: 快速检查是否是命令
-     * ---------------------------------------------------------------
-     * 
-     * 数学表达式如 "2+3" 以数字开头，不是命令。
-     * 这种快速检查可以避免不必要的匹配循环。
-     */
-    if (!isCandidateCommand(tokens[0])) {
+    /* 快速检查：命令必须以字母开头（排除表达式如 "2+3"） */
+    if (!isalpha((unsigned char)tokens[0][0])) {
         return COMMAND_RESULT_NOT_COMMAND;
     }
 
     /* ---------------------------------------------------------------
-     * 步骤4: 与命令规格表逐一比对
+     * 步骤3: 与命令规格表逐一比对
      * ---------------------------------------------------------------
      */
     for (i = 0; i < sizeof(COMMAND_SPECS) / sizeof(COMMAND_SPECS[0]); ++i) {
@@ -433,6 +412,6 @@ CommandResult commandDispatch(const char* input, CommandState* state)
      * 输出错误提示，帮助用户发现拼写错误。
      */
     logger_log(LOG_ERROR, "未知命令: %s\n", input);
-    logger_log(LOG_INFO, "输入 'show help' 查看可用命令。\n\n");
+    logger_log(LOG_INFO, "输入 /show help 查看可用命令。\n\n");
     return COMMAND_RESULT_ERROR;
 }

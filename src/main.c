@@ -7,6 +7,7 @@
 #include "command.h"
 #include "logger.h"
 #include "platform.h"
+#include "parser_debug.h"
 
 #define INPUT_BUFFER_SIZE 1024U
 
@@ -31,9 +32,9 @@ static void printHelp(void)
     logger_log(LOG_INFO, "- 直接输入数学表达式，例如: 2+3*4\n");
     logger_log(LOG_INFO, "- 使用括号改变优先级，例如: (2+3)*4\n");
     logger_log(LOG_INFO, "- 支持小数和科学计数法，例如: 1e-3 * 5\n\n");
-    logger_log(LOG_INFO, "- 输入 'show help' 查看全部命令\n");
-    logger_log(LOG_INFO, "- 输入 'show process' 开启计算过程输出\n");
-    logger_log(LOG_INFO, "- 输入 'hide process' 关闭计算过程输出\n\n");
+    logger_log(LOG_INFO, "- 输入 /help 查看全部命令\n");
+    logger_log(LOG_INFO, "- 输入 /show process 开启计算过程输出\n");
+    logger_log(LOG_INFO, "- 输入 /hide process 关闭计算过程输出\n\n");
 }
 
 static InputReadStatus readInputLine(char* input, size_t capacity)
@@ -52,6 +53,7 @@ static InputReadStatus readInputLine(char* input, size_t capacity)
     }
 
     while ((ch = fgetc(stdin)) != '\n' && ch != EOF) {
+        // xxx
     }
     input[capacity - 1] = '\0';
     return INPUT_TRUNCATED;
@@ -121,8 +123,9 @@ int main(void)
             continue;
         }
 
-        {
-            const CommandResult cmd_result = commandDispatch(input, &command_state);
+        /* 以 '/' 开头的输入视为命令，跳过 '/' 前缀后分发 */
+        if (input[0] == '/') {
+            const CommandResult cmd_result = commandDispatch(input + 1, &command_state);
             if (cmd_result != COMMAND_RESULT_NOT_COMMAND) {
                 if (command_state.should_exit) {
                     logger_log(LOG_INFO, "感谢使用，再见！\n");
@@ -140,6 +143,7 @@ int main(void)
             logger_log(LOG_INFO, "计算过程:\n");
             calcEvalOptionsInit(&options);
             options.on_step = printProcessStep;
+            // options.debug_flags = PARSER_DEBUG_CALL | PARSER_DEBUG_TOKEN;  
             err = evaluate(input, &options, &result, &err_pos);
         } else {
             result = 0.0;
