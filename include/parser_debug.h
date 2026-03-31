@@ -97,42 +97,88 @@
    * ============================================================ */
 
   #if (PARSER_DEBUG_LEVEL & PARSER_DEBUG_CALL)
-      #define PARSER_TRACE_ENTER(parser, func) \
-          do { \
-              if ((parser)->debug_flags & PARSER_DEBUG_CALL) { \
-                  printf("[ENTER] %*s%s\n", (parser)->depth * 2, "", func); \
-              } \
-          } while(0)
+      /*
+       * 优化：使用 __builtin_expect 提示编译器"调试通常是关闭的"
+       * 这样编译器可以将"调试关闭"路径优化为几乎零开销
+       *
+       * 对于 GCC/Clang：使用 __builtin_expect
+       * 对于其他编译器：回退到普通 if 检查
+       */
+      #if defined(__GNUC__) || defined(__clang__)
+          #define PARSER_TRACE_ENTER(parser, func) \
+              do { \
+                  unsigned _pdbg_flags_ = (parser)->debug_flags; \
+                  if (__builtin_expect(_pdbg_flags_ & PARSER_DEBUG_CALL, 0)) { \
+                      printf("[ENTER] %*s%s\n", (parser)->depth * 2, "", func); \
+                  } \
+              } while(0)
 
-      #define PARSER_TRACE_EXIT(parser, func, result) \
-          do { \
-              if ((parser)->debug_flags & PARSER_DEBUG_CALL) { \
-                  printf("[EXIT]  %*s%s => %.10g\n", (parser)->depth * 2, "", func, (double)(result)); \
-              } \
-          } while(0)
+          #define PARSER_TRACE_EXIT(parser, func, result) \
+              do { \
+                  unsigned _pdbg_flags_ = (parser)->debug_flags; \
+                  if (__builtin_expect(_pdbg_flags_ & PARSER_DEBUG_CALL, 0)) { \
+                      printf("[EXIT]  %*s%s => %.10g\n", (parser)->depth * 2, "", func, (double)(result)); \
+                  } \
+              } while(0)
+      #else
+          /* 非 GCC/Clang 编译器：使用普通实现 */
+          #define PARSER_TRACE_ENTER(parser, func) \
+              do { \
+                  if ((parser)->debug_flags & PARSER_DEBUG_CALL) { \
+                      printf("[ENTER] %*s%s\n", (parser)->depth * 2, "", func); \
+                  } \
+              } while(0)
+
+          #define PARSER_TRACE_EXIT(parser, func, result) \
+              do { \
+                  if ((parser)->debug_flags & PARSER_DEBUG_CALL) { \
+                      printf("[EXIT]  %*s%s => %.10g\n", (parser)->depth * 2, "", func, (double)(result)); \
+                  } \
+              } while(0)
+      #endif
   #else
       #define PARSER_TRACE_ENTER(parser, func) ((void)0)
       #define PARSER_TRACE_EXIT(parser, func, result) ((void)0)
   #endif
 
   #if (PARSER_DEBUG_LEVEL & PARSER_DEBUG_TOKEN)
-      #define PARSER_TRACE_TOKEN(parser, fmt, ...) \
-          do { \
-              if ((parser)->debug_flags & PARSER_DEBUG_TOKEN) { \
-                  printf("[TOKEN] " fmt, ##__VA_ARGS__); \
-              } \
-          } while(0)
+      #if defined(__GNUC__) || defined(__clang__)
+          #define PARSER_TRACE_TOKEN(parser, fmt, ...) \
+              do { \
+                  unsigned _pdbg_flags_ = (parser)->debug_flags; \
+                  if (__builtin_expect(_pdbg_flags_ & PARSER_DEBUG_TOKEN, 0)) { \
+                      printf("[TOKEN] " fmt, ##__VA_ARGS__); \
+                  } \
+              } while(0)
+      #else
+          #define PARSER_TRACE_TOKEN(parser, fmt, ...) \
+              do { \
+                  if ((parser)->debug_flags & PARSER_DEBUG_TOKEN) { \
+                      printf("[TOKEN] " fmt, ##__VA_ARGS__); \
+                  } \
+              } while(0)
+      #endif
   #else
       #define PARSER_TRACE_TOKEN(parser, fmt, ...) ((void)0)
   #endif
 
   #if (PARSER_DEBUG_LEVEL & PARSER_DEBUG_ERROR)
-      #define PARSER_TRACE_ERROR(parser, fmt, ...) \
-          do { \
-              if ((parser)->debug_flags & PARSER_DEBUG_ERROR) { \
-                  printf("[ERROR] " fmt, ##__VA_ARGS__); \
-              } \
-          } while(0)
+      #if defined(__GNUC__) || defined(__clang__)
+          #define PARSER_TRACE_ERROR(parser, fmt, ...) \
+              do { \
+                  unsigned _pdbg_flags_ = (parser)->debug_flags; \
+                  if (__builtin_expect(_pdbg_flags_ & PARSER_DEBUG_ERROR, 0)) { \
+                      printf("[ERROR] " fmt, ##__VA_ARGS__); \
+                  } \
+              } while(0)
+      #else
+          #define PARSER_TRACE_ERROR(parser, fmt, ...) \
+              do { \
+                  if ((parser)->debug_flags & PARSER_DEBUG_ERROR) { \
+                      printf("[ERROR] " fmt, ##__VA_ARGS__); \
+                  } \
+              } while(0)
+      #endif
   #else
       #define PARSER_TRACE_ERROR(parser, fmt, ...) ((void)0)
   #endif
