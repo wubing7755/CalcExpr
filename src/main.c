@@ -5,6 +5,7 @@
 
 #include "calculator.h"
 #include "command.h"
+#include "debug.h"
 #include "logger.h"
 #include "platform.h"
 #include "parser_debug.h"
@@ -87,14 +88,22 @@ static void printResult(const char* expression, double result)
     logger_log(LOG_INFO, "结果:   %.10g\n\n", result);
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
     CommandState command_state;
+
+    /* 解析调试参数（必须在其他初始化之前） */
+    debug_init(DEBUG_LEVEL_NONE, 0);
+    bool debug_active = debug_parse_args(argc, argv);
 
     platform_init();
     platform_enable_utf8();
     logger_init(LOG_INFO);
     commandStateInit(&command_state);
+
+    if (debug_active) {
+        DEBUG_INFO("调试模式已开启，级别=%d", debug_get_level());
+    }
 
     printWelcome();
     printHelp();

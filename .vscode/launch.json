@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug Calculator",
+      "name": "Calculator (No Debug)",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/build/bin/calculator",
@@ -13,6 +13,62 @@
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "preLaunchTask": "CMake Build"
+    },
+    {
+      "name": "Calculator (Debug Mode) - TRACE",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/bin/calculator",
+      "args": ["--debug", "--debug-level=5"],
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false,
+      "externalConsole": true,
+      "MIMode": "gdb",
+      "miDebuggerPath": "gdb",
+      "preLaunchTask": "CMake Build (Debug Mode)",
+      "detail": "使用 --debug --debug-level=5 开启完整跟踪输出"
+    },
+    {
+      "name": "Calculator (Debug Mode) - DEBUG",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/bin/calculator",
+      "args": ["--debug", "--debug-level=4"],
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false,
+      "externalConsole": true,
+      "MIMode": "gdb",
+      "miDebuggerPath": "gdb",
+      "preLaunchTask": "CMake Build (Debug Mode)",
+      "detail": "使用 --debug --debug-level=4 开启调试输出"
+    },
+    {
+      "name": "Calculator (Debug Mode) - Parser Module",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/bin/calculator",
+      "args": ["--debug", "--debug-module=parser", "--debug-level=5"],
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false,
+      "externalConsole": true,
+      "MIMode": "gdb",
+      "miDebuggerPath": "gdb",
+      "preLaunchTask": "CMake Build (Debug Mode)",
+      "detail": "仅开启 Parser 模块的跟踪"
+    },
+    {
+      "name": "Calculator (Debug Mode) - Lexer Module",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/bin/calculator",
+      "args": ["--debug", "--debug-module=lexer", "--debug-level=4"],
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false,
+      "externalConsole": true,
+      "MIMode": "gdb",
+      "miDebuggerPath": "gdb",
+      "preLaunchTask": "CMake Build (Debug Mode)",
+      "detail": "仅开启 Lexer 模块的调试"
     }
   ]
 }
