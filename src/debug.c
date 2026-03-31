@@ -85,19 +85,6 @@ static const char *module_tag(unsigned module) {
 }
 
 /**
- * @brief 提取文件名（去掉路径）
- */
-static const char *basename(const char *path) {
-    const char *p = strrchr(path, '/');
-    if (p) return p + 1;
-#if defined(_WIN32) || defined(_WIN64)
-    p = strrchr(path, '\\');
-    if (p) return p + 1;
-#endif
-    return path;
-}
-
-/**
  * @brief 获取时间戳
  */
 static void timestamp(char *buf, size_t len) {
