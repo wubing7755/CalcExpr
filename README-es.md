@@ -12,28 +12,30 @@ Una calculadora de expresiones matemáticas escrita en lenguaje C, que soporta o
 
 ## 📚 Descripción del Proyecto
 
-Este es un proyecto de práctica para aprender el lenguaje C, implementando la evaluación de expresiones matemáticas usando el algoritmo **Recursive Descent Parser** (Analizador Recursivo Descendente). A través de este proyecto, puedes aprender:
+CalcExpr es una calculadora de expresiones matemáticas desarrollada en C, utilizando el algoritmo **Recursive Descent Parser** (Analizador Recursivo Descendente) para la evaluación de expresiones.
 
-- Fundamentos del lenguaje C
-- Algoritmo recursivo descendente
-- Fundamentos del análisis léxico
-- Diseño de código modular
+Características del proyecto:
+- Arquitectura modular limpia
+- Sin dependencias (solo biblioteca estándar de C)
+- Sistema de depuración controlable en tiempo de ejecución
+- Cobertura completa de pruebas unitarias
 
 ## ✨ Características
 
 - ✅ Suma (+), Resta (-), Multiplicación (*), División (/)
 - ✅ Manejo de prioridad de paréntesis
 - ✅ Precedencia de operadores (multiplicación/división > suma/resta)
-- ✅ Soporte para números decimales
+- ✅ Soporte para decimales y notación científica
 - ✅ Interfaz interactiva de línea de comandos
-- ✅ Sistema de depuración (--debug para ver el proceso de análisis)
+- ✅ Selección interactiva del nivel de depuración
+- ✅ Sistema de depuración (compilación tiempo de activación / control en ejecución)
 
 ## 🛠️ Tecnologías
 
-- **Lenguaje de Programación**: C (C99)
-- **Herramientas de Construcción**: CMake / GCC / MinGW
+- **Lenguaje de Programación**: C (C11)
+- **Herramientas de Construcción**: CMake
 - **Algoritmo**: Analizador Recursivo Descendente
-- **Depuración**: Control en tiempo de ejecución (--debug)
+- **Pruebas**: CTest
 
 ## 📁 Estructura de Archivos
 
@@ -54,11 +56,10 @@ CalcExpr/
 │   ├── lexer.h          # Interfaz del analizador léxico
 │   ├── command.h        # Interfaz de comandos
 │   ├── logger.h         # Interfaz del registrador
-│   ├── debug.h          # Interfaz de macros de depuración
-│   └── parser_debug.h    # Macros de depuración del analizador
+│   └── debug.h          # Interfaz de macros de depuración
 ├── test/                  # Pruebas unitarias
+├── .vscode/              # Configuración de VS Code
 ├── CMakeLists.txt        # Configuración de compilación CMake
-├── build_debug.bat       # Script de compilación de depuración para Windows
 └── README.md             # Documentación del proyecto
 ```
 
@@ -71,29 +72,13 @@ CalcExpr/
 mkdir build && cd build
 
 # 2. Configurar según tu plataforma
-#    +----------+------------------+----------------------------------+
-#    | Plataforma| Compilador      | Comando de compilación          |
-#    +----------+------------------+----------------------------------+
-#    | Windows  | MinGW / MSYS2  | cmake -G "MinGW Makefiles" .. |
-#    |          |                 | cmake --build .                  |
-#    +----------+------------------+----------------------------------+
-#    | Windows  | MSVC (VS 2022) | cmake -G "Visual Studio 17 2022"|
-#    |          |                 | cmake --build . --config Release |
-#    +----------+------------------+----------------------------------+
-#    | Linux    | GCC / Clang     | cmake ..                        |
-#    |          |                 | cmake --build .                  |
-#    +----------+------------------+----------------------------------+
-#    | macOS    | Apple Clang     | cmake ..                        |
-#    |          |                 | cmake --build .                  |
-#    +----------+------------------+----------------------------------+
-
-# Ejemplo Windows MinGW:
+# Windows MinGW:
 cmake -G "MinGW Makefiles" ..
 
-# Ejemplo Windows MSVC:
+# Windows MSVC:
 cmake -G "Visual Studio 17 2022" ..
 
-# Ejemplo Linux/macOS:
+# Linux/macOS:
 cmake ..
 
 # 3. Compilar
@@ -110,14 +95,15 @@ cmake --build .
 ./bin/calculator
 ```
 
-### Compilación directa con GCC (No recomendado)
+### Depuración Interactiva
 
 ```bash
-# Windows
-gcc src/main.c src/calculator.c -o calculator.exe -lm
+# Activar modo de depuración
+./bin/calculator --debug
 
-# Linux / macOS
-gcc src/main.c src/calculator.c -o calculator -lm
+# Usar comandos en el programa
+/show process   # Seleccionar nivel de depuración interactivamente
+/hide process    # Desactivar salida de depuración
 ```
 
 ### Ejemplo de Uso
@@ -136,104 +122,75 @@ Expresión: (3-5)*6
 Resultado: -12.00
 ```
 
-## 📖 Temas de Aprendizaje
+## 🧪 Pruebas
 
-### 1. Algoritmo Recursivo Descendente
+El proyecto utiliza CTest para las pruebas.
 
-Definición recursiva de expresiones matemáticas:
+```bash
+# Ejecutar todas las pruebas
+ctest --output-on-failure
 
+# Ejecutar suite de pruebas específico
+ctest -R calc_tests_error --output-on-failure
 ```
-Expresión = Término { (+|-) Término }
-Término   = Factor { (*|/) Factor }
-Factor    = Número | '(' Expresión ')'
-```
 
-¡Esta definición recursiva soporta naturalmente la precedencia de operadores!
+Suites de pruebas disponibles:
+- `calc_tests_all` - Ejecutar todas las pruebas
+- `calc_tests_success` - Casos de éxito
+- `calc_tests_error` - Casos de error
+- `calc_tests_api` - Pruebas de contrato API
+- `calc_tests_error_div0` - Pruebas de división por cero
 
-### 2. Análisis Léxico (Lexer)
+## 🔧 Sistema de Depuración
 
-Dividir la cadena de entrada en Tokens:
-- Números: `123`, `45.67`, `1e-3`
-- Operadores: `+`, `-`, `*`, `/`
-- Paréntesis: `(`, `)`
-- Marcador final: `END`
-
-### 3. Diseño Modular
-
-- `lexer.h/c` - Analizador léxico
-- `parser.h/c` - Analizador recursivo descendente
-- `calculator.h/c` - Interfaz pública de la calculadora
-- `command.h/c` - Manejador de comandos
-- `logger.h/c` - Sistema de registro unificado
-- `debug.h/c` - Sistema de macros de depuración
-
-### 4. Sistema de Depuración
-
-El proyecto proporciona un sistema de depuración unificado, controlable en tiempo de ejecución mediante argumentos de línea de comandos, para aprender cómo ejecuta el analizador recursivo descendente.
-
-#### Activar en Tiempo de Compilación
+### Activar en Tiempo de Compilación
 
 Compilar con `-DENABLE_DEBUG=ON`:
 
 ```bash
-# Windows
-cmake -G "MinGW Makefiles" -DENABLE_DEBUG=ON -DCMAKE_BUILD_TYPE=Debug -S . -B build
+cmake -DENABLE_DEBUG=ON -DCMAKE_BUILD_TYPE=Debug -S . -B build
 cmake --build build
-
-# O usar el script proporcionado
-build_debug.bat
 ```
 
-#### Argumentos de Línea de Comandos
+### Argumentos de Línea de Comandos
 
 | Argumento | Descripción |
 |-----------|-------------|
 | `--debug` | Activar modo de depuración |
-| `--debug-level=N` | Establecer nivel de depuración (0-5) |
+| `--debug-level=N` | Establecer nivel de depuración (1-5) |
 | `--debug-module=NAME` | Establecer módulo (lexer/parser/calc/main/all) |
 
-#### Niveles de Depuración
+### Niveles de Depuración
 
-| Nivel | Valor | Descripción |
-|-------|-------|-------------|
-| `DEBUG_LEVEL_NONE` | 0 | Desactivar toda la salida de depuración |
-| `DEBUG_LEVEL_ERROR` | 1 | Solo mensajes de error |
-| `DEBUG_LEVEL_WARN` | 2 | Advertencias y superior |
-| `DEBUG_LEVEL_INFO` | 3 | Información y superior |
-| `DEBUG_LEVEL_DEBUG` | 4 | Depuración y superior (Salida de Tokens del Lexer) |
-| `DEBUG_LEVEL_TRACE` | 5 | Modo traza (Árbol de llamadas de funciones del Parser + resultados intermedios) |
+| Nivel | Descripción |
+|-------|-------------|
+| 1. Solo error | Desactivar salida de depuración |
+| 2. Aviso+Info | Mostrar información general |
+| 3. Mostrar pasos | Mostrar proceso de evaluación de expresiones |
+| 4. Traza del analizador | Mostrar detalles del análisis de sintaxis |
+| 5. Traza completa | Mostrar cadena de llamadas completa |
 
-#### Ejemplo de Salida de Depuración
+### Ejemplo de Salida de Depuración
 
-Entrada `2+3*4` con `--debug --debug-level=5`:
+Entrada `2+3*4` con modo de depuración nivel 5:
 
 ```
-[LEXER] NUM@0 | PLUS@1 | NUM@2 | MUL@3 | NUM@4 | END@5
-[PARSER] │   parseExpression()
-[PARSER] │   parseTerm()
-[PARSER] │   parseUnary()
-[PARSER] │   parsePrimary()
-[PARSER] │   parseTerm()
-[PARSER] │   parseUnary()
-[PARSER] │   parsePrimary()
-[PARSER] │   parseUnary()
-[PARSER] │   parsePrimary()
-[PARSER] 3 * 4 = 12
-[PARSER] 2 + 12 = 14
+[Paso 1] Leer número 2
+[Paso 2] Leer número 3
+[Paso 3] Leer número 4
+[Paso 4] 3 * 4 = 12
+[Paso 5] 2 + 12 = 14
 Expresión: 2+3*4
-Resultado:   14
+Resultado: 14
 ```
-
-Explicación de la salida:
-- Línea `[LEXER]` muestra todos los Tokens (tipo@posición)
-- Líneas `[PARSER]` muestran el árbol de llamadas de funciones del analizador y resultados intermedios
-- La sangría representa la profundidad de la recursión
 
 ## 🤝 Contribuciones
 
+¡Issues y Pull Requests son bienvenidos!
+
 1. Fork este repositorio
 2. Crea una rama de característica (`git checkout -b feature/amazing-feature`)
-3. Confirma tus cambios (`git commit -m 'Add some amazing feature'`)
+3. Confirma tus cambios (`git commit -m 'Add amazing feature'`)
 4. Envía la rama (`git push origin feature/amazing-feature`)
 5. Abre un Pull Request
 

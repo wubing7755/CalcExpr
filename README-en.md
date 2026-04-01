@@ -12,28 +12,30 @@ A mathematical expression calculator written in C language, supporting basic ope
 
 ## 📚 Project Overview
 
-This is a practice project for learning C language, implementing mathematical expression evaluation using the **Recursive Descent Parser** algorithm. Through this project, you can learn:
+CalcExpr is a mathematical expression calculator developed in C, using the **Recursive Descent Parser** algorithm for expression evaluation.
 
-- C language fundamentals
-- Recursive descent algorithm
-- Lexical analysis basics
-- Modular code design
+Project highlights:
+- Clean modular architecture
+- Zero dependencies (standard C library only)
+- Runtime-controllable debug system
+- Complete unit test coverage
 
 ## ✨ Features
 
 - ✅ Addition (+), Subtraction (-), Multiplication (*), Division (/)
 - ✅ Parentheses priority handling
 - ✅ Operator precedence (multiplication/division > addition/subtraction)
-- ✅ Decimal number support
+- ✅ Decimal and scientific notation support
 - ✅ Command-line interactive interface
-- ✅ Debug system (--debug flag to view parsing process)
+- ✅ Interactive debug level selection
+- ✅ Debug system (compile-time enable / runtime control)
 
 ## 🛠️ Tech Stack
 
-- **Programming Language**: C (C99)
-- **Build Tools**: CMake / GCC / MinGW
+- **Programming Language**: C (C11)
+- **Build Tools**: CMake
 - **Algorithm**: Recursive Descent Parser
-- **Debug**: Runtime control via (--debug)
+- **Testing**: CTest
 
 ## 📁 File Structure
 
@@ -54,11 +56,10 @@ CalcExpr/
 │   ├── lexer.h          # Lexer interface
 │   ├── command.h        # Command interface
 │   ├── logger.h         # Logger interface
-│   ├── debug.h          # Debug macro interface
-│   └── parser_debug.h    # Parser debug macros
+│   └── debug.h          # Debug macro interface
 ├── test/                  # Unit tests
+├── .vscode/              # VS Code configuration
 ├── CMakeLists.txt        # CMake build configuration
-├── build_debug.bat       # Windows debug build script
 └── README.md             # Project documentation
 ```
 
@@ -71,29 +72,13 @@ CalcExpr/
 mkdir build && cd build
 
 # 2. Configure based on your platform
-#    +----------+------------------+----------------------------------+
-#    | Platform | Compiler         | Build Command                   |
-#    +----------+------------------+----------------------------------+
-#    | Windows  | MinGW / MSYS2   | cmake -G "MinGW Makefiles" ..  |
-#    |          |                  | cmake --build .                  |
-#    +----------+------------------+----------------------------------+
-#    | Windows  | MSVC (VS 2022)  | cmake -G "Visual Studio 17 2022"|
-#    |          |                  | cmake --build . --config Release |
-#    +----------+------------------+----------------------------------+
-#    | Linux    | GCC / Clang     | cmake ..                        |
-#    |          |                  | cmake --build .                  |
-#    +----------+------------------+----------------------------------+
-#    | macOS    | Apple Clang     | cmake ..                        |
-#    |          |                  | cmake --build .                  |
-#    +----------+------------------+----------------------------------+
-
-# Windows MinGW example:
+# Windows MinGW:
 cmake -G "MinGW Makefiles" ..
 
-# Windows MSVC example:
+# Windows MSVC:
 cmake -G "Visual Studio 17 2022" ..
 
-# Linux/macOS example:
+# Linux/macOS:
 cmake ..
 
 # 3. Build
@@ -110,14 +95,15 @@ cmake --build .
 ./bin/calculator
 ```
 
-### Direct GCC Compilation (Not Recommended)
+### Interactive Debug
 
 ```bash
-# Windows
-gcc src/main.c src/calculator.c -o calculator.exe -lm
+# Enable debug mode
+./bin/calculator --debug
 
-# Linux / macOS
-gcc src/main.c src/calculator.c -o calculator -lm
+# Use commands in program
+/show process   # Interactively select debug level
+/hide process    # Disable debug output
 ```
 
 ### Usage Example
@@ -125,119 +111,90 @@ gcc src/main.c src/calculator.c -o calculator -lm
 ```
 Please enter expression> 2+3*4
 Expression: 2+3*4
-Result:    14.00
+Result:   14.00
 
 Please enter expression> (2+3)*4
 Expression: (2+3)*4
-Result:    20.00
+Result:   20.00
 
 Please enter expression> (3-5)*6
 Expression: (3-5)*6
-Result:    -12.00
+Result:   -12.00
 ```
 
-## 📖 Learning Topics
+## 🧪 Testing
 
-### 1. Recursive Descent Algorithm
+The project uses CTest for testing.
 
-Recursive definition of mathematical expressions:
+```bash
+# Run all tests
+ctest --output-on-failure
 
+# Run specific test suite
+ctest -R calc_tests_error --output-on-failure
 ```
-Expression = Term { (+|-) Term }
-Term       = Factor { (*|/) Factor }
-Factor     = Number | '(' Expression ')'
-```
 
-This recursive definition naturally supports operator precedence!
+Available test suites:
+- `calc_tests_all` - Run all tests
+- `calc_tests_success` - Success cases
+- `calc_tests_error` - Error cases
+- `calc_tests_api` - API contract tests
+- `calc_tests_error_div0` - Division by zero tests
 
-### 2. Lexical Analysis (Lexer)
+## 🔧 Debug System
 
-Breaking input string into Tokens:
-- Numbers: `123`, `45.67`, `1e-3`
-- Operators: `+`, `-`, `*`, `/`
-- Parentheses: `(`, `)`
-- End marker: `END`
-
-### 3. Modular Design
-
-- `lexer.h/c` - Lexer
-- `parser.h/c` - Recursive descent parser
-- `calculator.h/c` - Calculator public interface
-- `command.h/c` - Command handler
-- `logger.h/c` - Unified logging system
-- `debug.h/c` - Debug macro system
-
-### 4. Debug System
-
-The project provides a unified debug system, controllable at runtime via command-line arguments, for learning how the recursive descent parser executes.
-
-#### Compile-time Enable
+### Compile-time Enable
 
 Build with `-DENABLE_DEBUG=ON`:
 
 ```bash
-# Windows
-cmake -G "MinGW Makefiles" -DENABLE_DEBUG=ON -DCMAKE_BUILD_TYPE=Debug -S . -B build
+cmake -DENABLE_DEBUG=ON -DCMAKE_BUILD_TYPE=Debug -S . -B build
 cmake --build build
-
-# Or use the provided script
-build_debug.bat
 ```
 
-#### Command-line Arguments
+### Command-line Arguments
 
 | Argument | Description |
 |----------|-------------|
 | `--debug` | Enable debug mode |
-| `--debug-level=N` | Set debug level (0-5) |
+| `--debug-level=N` | Set debug level (1-5) |
 | `--debug-module=NAME` | Set module (lexer/parser/calc/main/all) |
 
-#### Debug Levels
+### Debug Levels
 
-| Level | Value | Description |
-|-------|-------|-------------|
-| `DEBUG_LEVEL_NONE` | 0 | Disable all debug output |
-| `DEBUG_LEVEL_ERROR` | 1 | Error messages only |
-| `DEBUG_LEVEL_WARN` | 2 | Warnings and above |
-| `DEBUG_LEVEL_INFO` | 3 | Info and above |
-| `DEBUG_LEVEL_DEBUG` | 4 | Debug and above (Lexer Token output) |
-| `DEBUG_LEVEL_TRACE` | 5 | Trace mode (Parser function call tree + intermediate results) |
+| Level | Description |
+|-------|-------------|
+| 1. Error Only | Disable debug output |
+| 2. Warn+Info | Show general information |
+| 3. Show Steps | Display expression evaluation process |
+| 4. Parser Trace | Show syntax analysis details |
+| 5. Full Trace | Show complete call chain |
 
-#### Debug Output Example
+### Debug Output Example
 
-Input `2+3*4` with `--debug --debug-level=5`:
+Input `2+3*4` with debug mode level 5:
 
 ```
-[LEXER] NUM@0 | PLUS@1 | NUM@2 | MUL@3 | NUM@4 | END@5
-[PARSER] │   parseExpression()
-[PARSER] │   parseTerm()
-[PARSER] │   parseUnary()
-[PARSER] │   parsePrimary()
-[PARSER] │   parseTerm()
-[PARSER] │   parseUnary()
-[PARSER] │   parsePrimary()
-[PARSER] │   parseUnary()
-[PARSER] │   parsePrimary()
-[PARSER] 3 * 4 = 12
-[PARSER] 2 + 12 = 14
+[Step 1] Read number 2
+[Step 2] Read number 3
+[Step 3] Read number 4
+[Step 4] 3 * 4 = 12
+[Step 5] 2 + 12 = 14
 Expression: 2+3*4
 Result:   14
 ```
 
-Output explanation:
-- `[LEXER]` line shows all Tokens (type@position)
-- `[PARSER]` lines show parser function call tree and intermediate results
-- Indentation represents recursion depth
-
 ## 🤝 Contributing
 
-1. Fork this repository
+Issues and Pull Requests are welcome!
+
+1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-##  License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
