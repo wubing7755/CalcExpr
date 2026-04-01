@@ -204,7 +204,7 @@ static int parse_args(int argc, char** argv) {
 static void run_success_case(const SuccessCase* tc) {
     double result = 0.0;
     size_t err_pos = 0;
-    CalcError err = evaluate(tc->expression, NULL, &result, &err_pos);
+    CalcError err = evaluate(tc->expression, &result, &err_pos);
 
     if (err != CALC_OK) {
         char buffer[160];
@@ -230,7 +230,7 @@ static void run_success_case(const SuccessCase* tc) {
 static void run_error_case(const ErrorCase* tc) {
     double result = 0.0;
     size_t err_pos = 0;
-    CalcError err = evaluate(tc->expression, NULL, &result, &err_pos);
+    CalcError err = evaluate(tc->expression, &result, &err_pos);
 
     if (tc->exact_match) {
         if (err != tc->expected_error) {
@@ -290,7 +290,7 @@ static void run_api_contract_suite(void) {
 
     if (case_matches_filter("result=NULL", "1+2,NULL")) {
         g_tests_selected++;
-        err = evaluate("1+2", NULL, NULL, &err_pos);
+        err = evaluate("1+2", NULL, &err_pos);
         if (err == CALC_ERROR_NULL_EXPR) {
             pass_case("result=NULL", "returns CALC_ERROR_NULL_EXPR");
         } else {
@@ -300,7 +300,7 @@ static void run_api_contract_suite(void) {
 
     if (case_matches_filter("expression=NULL", "NULL,NULL")) {
         g_tests_selected++;
-        err = evaluate(NULL, NULL, NULL, &err_pos);
+        err = evaluate(NULL, NULL, &err_pos);
         if (err == CALC_ERROR_NULL_EXPR) {
             pass_case("expression=NULL", "returns CALC_ERROR_NULL_EXPR");
         } else {
@@ -325,7 +325,7 @@ static void run_api_contract_suite(void) {
         memset(expr + depth + 1, ')', depth);
         expr[expr_len] = '\0';
 
-        err = evaluate(expr, NULL, &value, &err_pos);
+        err = evaluate(expr, &value, &err_pos);
 
         if (err == CALC_ERROR_RECURSION_LIMIT) {
             pass_case("recursion-limit", "returns CALC_ERROR_RECURSION_LIMIT");

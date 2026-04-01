@@ -90,7 +90,6 @@
  *   - 不支持变量和函数
  */
 CalcError parserEvaluateExpression(const char* expression,
-                                   const CalcEvalOptions* options,
                                    double* result,
                                    size_t* err_pos);
 

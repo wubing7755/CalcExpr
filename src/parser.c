@@ -430,7 +430,6 @@ static double parserParseExpression(Parser *parser) {
  * @return 错误码
  */
 CalcError parserEvaluateExpression(const char *expression,
-                                   const CalcEvalOptions *options,
                                    double *result, size_t *err_pos) {
   Parser parser;
 
@@ -448,13 +447,6 @@ CalcError parserEvaluateExpression(const char *expression,
   parser.depth = 0U;
   parser.step_index = 0U;
   parser.max_depth = PARSER_DEFAULT_MAX_RECURSION;
-
-  /* 应用用户提供的选项（如果有） */
-  if (options != NULL) {
-    if (options->max_recursion_depth != 0U) {
-      parser.max_depth = options->max_recursion_depth;
-    }
-  }
 
   /* 读取第一个 token */
   parserNextToken(&parser);

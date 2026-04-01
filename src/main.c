@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
 
         result = 0.0;
         err_pos = 0;
-        err = evaluate(input, NULL, &result, &err_pos);
+        err = evaluate(input, &result, &err_pos);
 
         /* -------- 结果输出 -------- */
 

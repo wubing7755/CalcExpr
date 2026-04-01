@@ -116,7 +116,7 @@ void commandHandleInteractive(const char* input, CommandState* state) {
             state->interactive.mode = INPUT_MODE_NORMAL;
             state->interactive.prompt = NULL;
             state->show_process = true;
-            logger_log(LOG_INFO, "已开启调试输出。\n\n");
+            logger_log(LOG_INFO, "已开启调试输出，级别=%d。\n\n", debug_get_level());
         } else {
             logger_log(LOG_ERROR, "无效选择，请输入 1-5 之间的数字。\n");
             logger_log(LOG_INFO, "请选择 (1-5): ");
@@ -239,13 +239,6 @@ static void handleShowProcess(CommandState* state)
         "  4. 解析器跟踪 - 显示语法分析详情\n"
         "  5. 完整跟踪   - 显示全部调用链\n"
         "请选择 (1-5): ");
-    logger_log(LOG_INFO, "调试级别选项：\n"
-                            "  1. 仅错误     - 关闭调试输出\n"
-                            "  2. 警告+信息  - 显示一般信息\n"
-                            "  3. 计算步骤   - 显示表达式求值过程\n"
-                            "  4. 解析器跟踪 - 显示语法分析详情\n"
-                            "  5. 完整跟踪   - 显示全部调用链\n"
-                            "请选择 (1-5): ");
 }
 
 /**
