@@ -1,6 +1,30 @@
 /**
  * @file lexer.c
  * @brief 词法分析器实现
+ *
+ * ## 模块职责
+ *
+ * 词法分析器（Lexer）将输入字符串分解为词素（Token）序列。
+ * 它是编译器前端的第一个阶段，位于语法分析之前。
+ *
+ * ## 核心概念
+ *
+ * ### 预读模式
+ * - 每次调用 lexerNextToken() 获取下一个 Token
+ * - 当前 Token 存储在 lexer->current 中
+ * - 使用预读模式便于处理二元运算符判断
+ *
+ * ### Token
+ * - NUMBER : 数字常量（整数、小数、科学计数法）
+ * - PLUS/MINUS/MUL/DIV : 算术运算符
+ * - LPAREN/RPAREN : 左右括号
+ * - END : 输入结束标记
+ * - ERROR : 错误标记
+ *
+ * ## 错误处理策略
+ *
+ * 仅记录第一个错误（first error only），避免错误信息被覆盖。
+ * 错误发生时立即返回，后续调用不再处理。
  */
 
 #include "lexer.h"
@@ -15,6 +39,12 @@
 #include "calculator.h"
 #include "debug.h"
 
+/**
+ * @brief Token 类型转字符串（用于调试输出）
+ *
+ * @param type Token 类型
+ * @return 字符串形式的类型名
+ */
 static const char* tokenTypeName(TokenType type) {
     switch (type) {
         case TOKEN_NUMBER: return "NUM";
@@ -32,6 +62,8 @@ static const char* tokenTypeName(TokenType type) {
 /* ========================================================================
  * 预扫描并输出所有 Token
  * ======================================================================== */
+
+#ifdef DEBUG_ENABLE
 
 void lexerDebugPrintAll(Lexer *lexer) {
     if (g_debug_level < DEBUG_LEVEL_TRACE) return;
@@ -102,12 +134,24 @@ void lexerDebugPrintAll(Lexer *lexer) {
     lexer->pos = saved_pos;
 }
 
+#endif /* DEBUG_ENABLE */
+
 /* ========================================================================
  * 错误处理
  * ======================================================================== */
 
+/**
+ * @brief 设置词法错误状态
+ *
+ * 错误仅设置第一次，之后调用无效（first error only）。
+ * 同时设置当前 token 为 TOKEN_ERROR 标记。
+ *
+ * @param lexer 词法分析器
+ * @param err   错误码
+ * @param pos   错误发生位置
+ */
 static void lexerSetError(Lexer *lexer, CalcError err, size_t pos) {
-    if (lexer->err == CALC_OK) {
+    if (lexer->err == CALC_OK) {  /* 仅记录第一个错误 */
         lexer->err = err;
         lexer->err_pos = pos;
     }
@@ -121,6 +165,11 @@ static void lexerSetError(Lexer *lexer, CalcError err, size_t pos) {
  * 空白字符跳过
  * ======================================================================== */
 
+/**
+ * @brief 跳过空白字符
+ *
+ * @param lexer 词法分析器
+ */
 static void lexerSkipWhitespace(Lexer *lexer) {
     while (lexer->pos < lexer->length &&
            isspace((unsigned char)lexer->input[lexer->pos])) {
@@ -132,6 +181,14 @@ static void lexerSkipWhitespace(Lexer *lexer) {
  * 词法分析器初始化
  * ======================================================================== */
 
+/**
+ * @brief 初始化词法分析器
+ *
+ * 设置输入字符串并重置所有状态。
+ *
+ * @param lexer 词法分析器实例
+ * @param input 要分析的输入字符串（不复制，仅保存指针）
+ */
 void lexerInit(Lexer *lexer, const char *input) {
     lexer->input = input;
     lexer->length = strlen(input);
@@ -148,6 +205,21 @@ void lexerInit(Lexer *lexer, const char *input) {
  * 核心：词法分析 - 读取下一个 Token
  * ======================================================================== */
 
+/**
+ * @brief 获取下一个 Token
+ *
+ * 读取并返回下一个词素。结果存储在 lexer->current 中。
+ *
+ * 处理流程：
+ *   1. 检查是否已有错误（快速返回）
+ *   2. 跳过空白字符
+ *   3. 检查输入结束
+ *   4. 识别运算符（+ - * / ( )）
+ *   5. 识别数字（使用 strtod，支持小数和科学计数法）
+ *   6. 识别非法字符
+ *
+ * @param lexer 词法分析器实例
+ */
 void lexerNextToken(Lexer *lexer) {
     if (lexer->err != CALC_OK) {
         return;

@@ -201,7 +201,7 @@ void debug_trace(const char *file, int line, const char *func,
  */
 #define DEBUG_TRACE_ENTER(module) \
     do { \
-        if (DEBUGunlikely(g_debug_level >= DEBUG_LEVEL_TRACE && \
+        if (DEBUGunlikely(g_debug_level >= DEBUG_LEVEL_DEBUG && \
                         ((module) & g_debug_modules))) { \
             debug_trace(__FILE__, __LINE__, __func__, (module), true, 0.0); \
         } \
@@ -216,7 +216,7 @@ void debug_trace(const char *file, int line, const char *func,
  */
 #define DEBUG_TRACE_EXIT(module, result) \
     do { \
-        if (DEBUGunlikely(g_debug_level >= DEBUG_LEVEL_TRACE && \
+        if (DEBUGunlikely(g_debug_level >= DEBUG_LEVEL_DEBUG && \
                         ((module) & g_debug_modules))) { \
             debug_trace(__FILE__, __LINE__, __func__, (module), false, (result)); \
         } \
@@ -270,10 +270,10 @@ void debug_trace(const char *file, int line, const char *func,
 
 /**
  * @brief Parser 模块调试
- * @note 默认级别：DEBUG_LEVEL_DEBUG
+ * @note 默认级别：DEBUG_LEVEL_INFO
  */
 #define DEBUG_PARSER(fmt, ...) \
-    DEBUG_LOG(DEBUG_LEVEL_DEBUG, DEBUG_MODULE_PARSER, fmt, ##__VA_ARGS__)
+    DEBUG_LOG(DEBUG_LEVEL_INFO, DEBUG_MODULE_PARSER, fmt, ##__VA_ARGS__)
 
 /**
  * @brief Calc 模块调试

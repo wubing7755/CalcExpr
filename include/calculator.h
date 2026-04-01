@@ -22,43 +22,40 @@ typedef enum {
   CALC_ERROR_MISSING_RPAREN,   /**< 缺少右括号 ) */
   CALC_ERROR_SYNTAX,           /**< 语法错误 */
   CALC_ERROR_RECURSION_LIMIT,  /**< 递归深度超限 */
-  CALC_ERROR_NUMBER_OVERFLOW,  /**< 数值超出范围（新增） */
+  CALC_ERROR_NUMBER_OVERFLOW,  /**< 数值超出范围 */
   CALC_ERROR_LAST              /**< 错误码边界标记 */
 } CalcError;
-
-/* ========================================================================
- * 步骤回调接口
- * ======================================================================== */
-
-typedef struct {
-  unsigned step_index;
-  const char *message;
-  double elapsed_ms;
-} CalcStepInfo;
-
-typedef void (*CalcStepCallback)(void *user_data, const CalcStepInfo *step);
-
-/* ========================================================================
- * 评估选项结构
- * ======================================================================== */
-
-typedef struct {
-  unsigned max_recursion_depth; /**< 最大递归深度（0=默认256层） */
-  bool measure_step_time;       /**< 是否测量每步耗时 */
-  CalcStepCallback on_step;     /**< 步骤回调函数（可为NULL） */
-  void *user_data;              /**< 用户数据（传递给回调） */
-} CalcEvalOptions;
 
 /* ========================================================================
  * 公共函数声明
  * ======================================================================== */
 
-void calcEvalOptionsInit(CalcEvalOptions *options);
+/**
+ * @brief 评估数学表达式
+ *
+ * 解析并计算表达式的值。
+ *
+ * @param expression 要计算的数学表达式字符串
+ * @param result    计算结果输出
+ * @param err_pos   错误位置输出（可为 NULL）
+ * @return 错误码，CALC_OK 表示成功
+ */
+CalcError evaluate(const char *expression, double *result, size_t *err_pos);
 
-CalcError evaluate(const char *expression, const CalcEvalOptions *options,
-                   double *result, size_t *err_pos);
-
+/**
+ * @brief 获取错误消息
+ *
+ * @param err 错误码
+ * @return 错误码对应的字符串描述
+ */
 const char *calcGetErrorMessage(CalcError err);
+
+/**
+ * @brief 获取解析器错误消息（别名）
+ *
+ * @param err 错误码
+ * @return 错误码对应的字符串描述
+ */
 const char *parserGetErrorMessage(CalcError err);
 
 #endif /* CALCULATOR_H */

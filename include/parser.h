@@ -13,8 +13,9 @@
  * 
  * @code
  *   Expression ::= Term { ('+' | '-') Term }
- *   Term       ::= Factor { ('*' | '/') Factor }
- *   Factor     ::= Number | '(' Expression ')' | ['-'] Factor
+ *   Term       ::= Unary { ('*' | '/') Unary }
+ *   Unary      ::= Primary | ('+' | '-') Unary
+ *   Primary    ::= Number | '(' Expression ')'
  * @endcode
  * 
  * ## 运算符优先级
@@ -89,7 +90,6 @@
  *   - 不支持变量和函数
  */
 CalcError parserEvaluateExpression(const char* expression,
-                                   const CalcEvalOptions* options,
                                    double* result,
                                    size_t* err_pos);
 

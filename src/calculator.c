@@ -51,19 +51,18 @@ const char *parserGetErrorMessage(CalcError err) {
   return calcGetErrorMessage(err);
 }
 
-void calcEvalOptionsInit(CalcEvalOptions *options) {
-  if (options == NULL) {
-    return;
-  }
-
-  options->max_recursion_depth = 0U;
-  options->measure_step_time = false;
-  options->on_step = NULL;
-  options->user_data = NULL;
-}
-
-CalcError evaluate(const char *expression, const CalcEvalOptions *options,
-                   double *result, size_t *err_pos) {
+/**
+ * @brief 评估数学表达式
+ *
+ * 公共入口函数，对表达式进行验证后委托给 parser 模块。
+ *
+ * @param expression 要计算的数学表达式
+ * @param result    结果输出指针
+ * @param err_pos   错误位置（可为 NULL）
+ * @return 错误码
+ */
+CalcError evaluate(const char *expression, double *result, size_t *err_pos) {
+  /* 参数验证：表达式为空或结果指针为 NULL */
   if (expression == NULL || *expression == '\0' || result == NULL) {
     if (err_pos != NULL) {
       *err_pos = 0;
@@ -71,5 +70,5 @@ CalcError evaluate(const char *expression, const CalcEvalOptions *options,
     return CALC_ERROR_NULL_EXPR;
   }
 
-  return parserEvaluateExpression(expression, options, result, err_pos);
+  return parserEvaluateExpression(expression, result, err_pos);
 }

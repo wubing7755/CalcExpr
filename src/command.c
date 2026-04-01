@@ -33,6 +33,7 @@
 #include <stddef.h>
 #include <string.h>
 
+#include "debug.h"
 #include "logger.h"
 
 /* ========================================================================
@@ -76,6 +77,52 @@ typedef struct {
     size_t token_count;             /**< 词的数量 */
     CommandHandler handler;         /**< 处理函数 */
 } CommandSpec;
+
+/* ========================================================================
+ * 交互状态处理
+ * ======================================================================== */
+
+/**
+ * @brief 设置交互状态
+ *
+ * @param interactive 交互状态指针
+ * @param mode        输入模式
+ * @param prompt      提示信息
+ */
+static void setInteractive(InteractiveState* interactive, InputMode mode, const char* prompt) {
+    interactive->mode = mode;
+    interactive->prompt = prompt;
+}
+
+/**
+ * @brief 处理交互式输入
+ *
+ * 当处于交互模式时，调用此函数处理用户输入。
+ *
+ * @param input 用户输入
+ * @param state 命令状态
+ */
+void commandHandleInteractive(const char* input, CommandState* state) {
+    if (state->interactive.mode == INPUT_MODE_DEBUG_LEVEL) {
+        int level = 0;
+
+        /* 解析用户输入 */
+        if (input != NULL && *input >= '1' && *input <= '5') {
+            level = *input - '0';
+        }
+
+        if (level >= DEBUG_LEVEL_ERROR && level <= DEBUG_LEVEL_TRACE) {
+            debug_set_level(level);
+            state->interactive.mode = INPUT_MODE_NORMAL;
+            state->interactive.prompt = NULL;
+            state->show_process = true;
+            logger_log(LOG_INFO, "已开启调试输出，级别=%d。\n\n", debug_get_level());
+        } else {
+            logger_log(LOG_ERROR, "无效选择，请输入 1-5 之间的数字。\n");
+            logger_log(LOG_INFO, "请选择 (1-5): ");
+        }
+    }
+}
 
 /* ========================================================================
  * 工具函数
@@ -175,29 +222,37 @@ static size_t tokenize(char* text, char* tokens[], size_t max_tokens)
 
 /**
  * @brief 处理 "show process" 命令
- * 
- * 开启计算过程的显示。
- * 开启后，每次计算表达式都会输出详细的计算步骤。
- * 
+ *
+ * 显示调试级别选项菜单，进入交互模式等待用户选择。
+ *
  * @param state 命令状态指针
  */
 static void handleShowProcess(CommandState* state)
 {
-    state->show_process = true;
-    logger_log(LOG_INFO, "已开启计算过程输出。\n\n");
+    (void)state;  /* 未使用参数 */
+
+    setInteractive(&state->interactive, INPUT_MODE_DEBUG_LEVEL,
+        "调试级别选项：\n"
+        "  1. 仅错误     - 关闭调试输出\n"
+        "  2. 警告+信息  - 显示一般信息\n"
+        "  3. 计算步骤   - 显示表达式求值过程\n"
+        "  4. 解析器跟踪 - 显示语法分析详情\n"
+        "  5. 完整跟踪   - 显示全部调用链\n"
+        "请选择 (1-5): ");
 }
 
 /**
  * @brief 处理 "hide process" 命令
- * 
- * 关闭计算过程的显示。
- * 
+ *
+ * 关闭调试输出，恢复安静模式。
+ *
  * @param state 命令状态指针
  */
 static void handleHideProcess(CommandState* state)
 {
     state->show_process = false;
-    logger_log(LOG_INFO, "已关闭计算过程输出。\n\n");
+    debug_set_level(DEBUG_LEVEL_NONE);
+    logger_log(LOG_INFO, "已关闭调试输出。\n\n");
 }
 
 /**
@@ -215,9 +270,8 @@ static void handleQuit(CommandState* state)
 
 /**
  * @brief 处理 "show help" 命令
- * 
+ *
  * 显示所有可用命令的列表和说明。
- * 这是一个前向声明，因为 handleShowHelp 在 CommandSpec 数组之前定义。
  */
 static void handleShowHelp(CommandState* state);
 
@@ -243,24 +297,28 @@ static const char* TOK_Q[] = {"q"};
 
 /**
  * @brief 命令规格表
- * 
+ *
  * 存储所有支持的命令及其元信息。
- * 
+ *
+ * ## 字段说明
+ *   syntax      : 命令语法原文
+ *   description : 命令描述（用于帮助信息）
+ *   tokens      : 分词后的词数组
+ *   token_count : 词的个数
+ *   handler     : 命令处理函数
+ *
  * ## 设计要点
- * 
  *   1. 按优先级排列：常用命令放前面
  *   2. 每个命令有多个别名（如 quit、exit、q）
- *   3. 使用指定初始化器，清晰明了
  */
 static const CommandSpec COMMAND_SPECS[] = {
-    /* 语法              描述                    词数组                    词数    处理函数 */
-    {"show process",  "开启计算过程输出",   TOK_SHOW_PROCESS,  2U,  handleShowProcess},
-    {"hide process",  "关闭计算过程输出",   TOK_HIDE_PROCESS,  2U,  handleHideProcess},
-    {"show help",     "显示命令帮助",       TOK_SHOW_HELP,     2U,  handleShowHelp},
-    {"help",          "显示命令帮助",       TOK_HELP,          1U,  handleShowHelp},
-    {"quit",          "退出程序",           TOK_QUIT,          1U,  handleQuit},
-    {"exit",          "退出程序",           TOK_EXIT,          1U,  handleQuit},
-    {"q",             "退出程序",           TOK_Q,             1U,  handleQuit}
+    {"show process", "开启计算过程输出", TOK_SHOW_PROCESS, 2U, handleShowProcess},
+    {"hide process", "关闭计算过程输出", TOK_HIDE_PROCESS, 2U, handleHideProcess},
+    {"show help",    "显示命令帮助",    TOK_SHOW_HELP,    2U, handleShowHelp},
+    {"help",         "显示命令帮助",    TOK_HELP,         1U, handleShowHelp},
+    {"quit",         "退出程序",        TOK_QUIT,         1U, handleQuit},
+    {"exit",         "退出程序",        TOK_EXIT,         1U, handleQuit},
+    {"q",            "退出程序",        TOK_Q,            1U, handleQuit}
 };
 
 /* ========================================================================
@@ -269,21 +327,18 @@ static const CommandSpec COMMAND_SPECS[] = {
 
 /**
  * @brief 显示帮助信息
- * 
+ *
  * 遍历命令规格表，输出每个命令的语法和描述。
- * 
- * @param state 命令状态指针（此函数不使用）
  */
 static void handleShowHelp(CommandState* state)
 {
     size_t i;
-    (void)state;  /* 显式声明未使用，避免编译器警告 */
+    (void)state;  /* 未使用参数 */
 
     logger_log(LOG_INFO, "【命令列表】\n");
-    
-    /* 遍历所有命令规格 */
+
+    /* 遍历所有命令规格并输出 */
     for (i = 0; i < sizeof(COMMAND_SPECS) / sizeof(COMMAND_SPECS[0]); ++i) {
-        /* 使用左对齐格式化，宽度13，确保描述对齐 */
         logger_log(LOG_INFO, "- %-13s : %s\n",
                    COMMAND_SPECS[i].syntax, COMMAND_SPECS[i].description);
     }
@@ -303,8 +358,11 @@ static void handleShowHelp(CommandState* state)
  */
 void commandStateInit(CommandState* state)
 {
-    state->show_process = false;  /* 默认不显示计算过程 */
-    state->should_exit = false;    /* 默认不退出 */
+    state->show_process = false;  /* 默认不显示调试输出 */
+    state->should_exit = false;     /* 默认不退出 */
+    state->last_input = NULL;       /* 无上一次输入 */
+    state->interactive.mode = INPUT_MODE_NORMAL;
+    state->interactive.prompt = NULL;
 }
 
 /**
@@ -374,6 +432,10 @@ CommandResult commandDispatch(const char* input, CommandState* state)
         return COMMAND_RESULT_NOT_COMMAND;
     }
 
+    /* 收到新命令，重置交互状态 */
+    state->interactive.mode = INPUT_MODE_NORMAL;
+    state->interactive.prompt = NULL;
+
     /* ---------------------------------------------------------------
      * 步骤3: 与命令规格表逐一比对
      * ---------------------------------------------------------------
@@ -398,6 +460,8 @@ CommandResult commandDispatch(const char* input, CommandState* state)
 
         /* 所有词都匹配 */
         if (match) {
+            /* 保存原始输入供处理器解析参数 */
+            state->last_input = input;
             /* 调用命令处理函数 */
             spec->handler(state);
             return COMMAND_RESULT_HANDLED;

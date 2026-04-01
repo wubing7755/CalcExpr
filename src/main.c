@@ -52,8 +52,9 @@ static InputReadStatus readInputLine(char* input, size_t capacity)
         return INPUT_OK;
     }
 
+    /* 输入过长，丢弃剩余字符直到行尾 */
     while ((ch = fgetc(stdin)) != '\n' && ch != EOF) {
-        // xxx
+        /* 丢弃超出缓冲区的字符 */
     }
     input[capacity - 1] = '\0';
     return INPUT_TRUNCATED;
@@ -70,26 +71,34 @@ static bool isValidExpression(const char* input)
     return false;
 }
 
-static void printProcessStep(void* user_data, const CalcStepInfo* step)
-{
-    (void)user_data;
-    if (step->elapsed_ms > 0.0) {
-        logger_log(LOG_INFO, "  步骤%u: %s (耗时 %.3f ms)\n",
-                   step->step_index, step->message, step->elapsed_ms);
-    } else {
-        logger_log(LOG_INFO, "  步骤%u: %s\n", step->step_index, step->message);
-    }
-}
-
 static void printResult(const char* expression, double result)
 {
     logger_log(LOG_INFO, "表达式: %s\n", expression);
     logger_log(LOG_INFO, "结果:   %.10g\n\n", result);
 }
 
+/* ========================================================================
+ * 主程序
+ * ======================================================================== */
+
+/**
+ * @brief 计算器 REPL 主循环
+ *
+ * 程序流程：
+ *   1. 初始化（调试参数、平台、日志、命令状态）
+ *   2. 显示欢迎信息和帮助
+ *   3. 进入 REPL 循环：
+ *      - 读取用户输入
+ *      - 处理命令（以 '/' 开头）
+ *      - 求值表达式
+ *      - 输出结果或错误
+ *   4. 清理并退出
+ */
 int main(int argc, char *argv[])
 {
     CommandState command_state;
+
+    /* -------- 初始化阶段 -------- */
 
     /* 解析调试参数（必须在其他初始化之前） */
     debug_init(DEBUG_LEVEL_NONE, 0);
@@ -107,6 +116,8 @@ int main(int argc, char *argv[])
     printWelcome();
     printHelp();
 
+    /* -------- REPL 循环 -------- */
+
     while (true) {
         char input[INPUT_BUFFER_SIZE];
         InputReadStatus input_status;
@@ -114,23 +125,41 @@ int main(int argc, char *argv[])
         size_t err_pos;
         CalcError err;
 
-        logger_log(LOG_INFO, "请输入表达式> ");
+        /* -------- 交互模式提示 -------- */
+        if (command_state.interactive.mode != INPUT_MODE_NORMAL &&
+            command_state.interactive.prompt != NULL) {
+            logger_log(LOG_INFO, "%s", command_state.interactive.prompt);
+        } else {
+            logger_log(LOG_INFO, "请输入表达式> ");
+        }
 
         input_status = readInputLine(input, sizeof(input));
+
+        /* 处理输入结束（Ctrl+D 或 Ctrl+Z） */
         if (input_status == INPUT_EOF) {
             logger_log(LOG_INFO, "\n程序结束\n");
             break;
         }
+
+        /* 处理输入过长 */
         if (input_status == INPUT_TRUNCATED) {
             logger_log(LOG_ERROR, "错误: 输入长度超过 %u 字符，请缩短表达式后重试。\n\n",
                        (unsigned)(INPUT_BUFFER_SIZE - 1U));
             continue;
         }
 
+        /* 跳过空输入 */
         if (!isValidExpression(input)) {
             continue;
         }
 
+        /* -------- 交互模式处理 -------- */
+        if (command_state.interactive.mode != INPUT_MODE_NORMAL) {
+            commandHandleInteractive(input, &command_state);
+            continue;
+        }
+
+        /* -------- 命令处理 -------- */
         /* 以 '/' 开头的输入视为命令，跳过 '/' 前缀后分发 */
         if (input[0] == '/') {
             const CommandResult cmd_result = commandDispatch(input + 1, &command_state);
@@ -144,26 +173,20 @@ int main(int argc, char *argv[])
             }
         }
 
-        if (command_state.show_process) {
-            CalcEvalOptions options;
-            result = 0.0;
-            err_pos = 0;
-            logger_log(LOG_INFO, "计算过程:\n");
-            calcEvalOptionsInit(&options);
-            options.on_step = printProcessStep;
-            // options.debug_flags = PARSER_DEBUG_CALL | PARSER_DEBUG_TOKEN;  
-            err = evaluate(input, &options, &result, &err_pos);
-        } else {
-            result = 0.0;
-            err_pos = 0;
-            err = evaluate(input, NULL, &result, &err_pos);
-        }
+        /* -------- 表达式求值 -------- */
+
+        result = 0.0;
+        err_pos = 0;
+        err = evaluate(input, &result, &err_pos);
+
+        /* -------- 结果输出 -------- */
 
         if (err == CALC_OK) {
             printResult(input, result);
             continue;
         }
 
+        /* 输出错误信息 */
         if (err_pos < strlen(input)) {
             logger_log(LOG_ERROR, "错误: %s (位置: %zu, 附近: '%.16s')\n\n",
                        calcGetErrorMessage(err), err_pos, input + err_pos);
@@ -171,6 +194,8 @@ int main(int argc, char *argv[])
             logger_log(LOG_ERROR, "错误: %s\n\n", calcGetErrorMessage(err));
         }
     }
+
+    /* -------- 清理阶段 -------- */
 
     platform_cleanup();
     return 0;

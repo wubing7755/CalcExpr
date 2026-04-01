@@ -76,18 +76,11 @@ static SuiteMask g_suite_mask = SUITE_ALL;
 static int g_tests_passed = 0;
 static int g_tests_failed = 0;
 static int g_tests_selected = 0;
-static int g_trace_calls = 0;
 
 static int almost_equal(double lhs, double rhs) {
     const double diff = fabs(lhs - rhs);
     const double scale = fmax(1.0, fmax(fabs(lhs), fabs(rhs)));
     return diff <= EPSILON * scale;
-}
-
-static void trace_counter_cb(void* user_data, const CalcStepInfo* step) {
-    (void)user_data;
-    (void)step;
-    g_trace_calls++;
 }
 
 static void fail_case(const char* name, const char* expression, const char* reason) {
@@ -211,7 +204,7 @@ static int parse_args(int argc, char** argv) {
 static void run_success_case(const SuccessCase* tc) {
     double result = 0.0;
     size_t err_pos = 0;
-    CalcError err = evaluate(tc->expression, NULL, &result, &err_pos);
+    CalcError err = evaluate(tc->expression, &result, &err_pos);
 
     if (err != CALC_OK) {
         char buffer[160];
@@ -237,7 +230,7 @@ static void run_success_case(const SuccessCase* tc) {
 static void run_error_case(const ErrorCase* tc) {
     double result = 0.0;
     size_t err_pos = 0;
-    CalcError err = evaluate(tc->expression, NULL, &result, &err_pos);
+    CalcError err = evaluate(tc->expression, &result, &err_pos);
 
     if (tc->exact_match) {
         if (err != tc->expected_error) {
@@ -297,7 +290,7 @@ static void run_api_contract_suite(void) {
 
     if (case_matches_filter("result=NULL", "1+2,NULL")) {
         g_tests_selected++;
-        err = evaluate("1+2", NULL, NULL, &err_pos);
+        err = evaluate("1+2", NULL, &err_pos);
         if (err == CALC_ERROR_NULL_EXPR) {
             pass_case("result=NULL", "returns CALC_ERROR_NULL_EXPR");
         } else {
@@ -307,7 +300,7 @@ static void run_api_contract_suite(void) {
 
     if (case_matches_filter("expression=NULL", "NULL,NULL")) {
         g_tests_selected++;
-        err = evaluate(NULL, NULL, NULL, &err_pos);
+        err = evaluate(NULL, NULL, &err_pos);
         if (err == CALC_ERROR_NULL_EXPR) {
             pass_case("expression=NULL", "returns CALC_ERROR_NULL_EXPR");
         } else {
@@ -332,7 +325,7 @@ static void run_api_contract_suite(void) {
         memset(expr + depth + 1, ')', depth);
         expr[expr_len] = '\0';
 
-        err = evaluate(expr, NULL, &value, &err_pos);
+        err = evaluate(expr, &value, &err_pos);
 
         if (err == CALC_ERROR_RECURSION_LIMIT) {
             pass_case("recursion-limit", "returns CALC_ERROR_RECURSION_LIMIT");
@@ -346,25 +339,7 @@ static void run_api_contract_suite(void) {
         free(expr);
     }
 
-    if (case_matches_filter("evaluate-step-hook", "2+3*4")) {
-        CalcEvalOptions options;
-        double value = 0.0;
-        g_tests_selected++;
-        g_trace_calls = 0;
-        calcEvalOptionsInit(&options);
-        options.on_step = trace_counter_cb;
-        options.measure_step_time = true;
-        err = evaluate("2+3*4", &options, &value, &err_pos);
-        if (err == CALC_OK && almost_equal(value, 14.0) && g_trace_calls > 0) {
-            pass_case("evaluate-step-hook", "returns CALC_OK and emits step events");
-        } else {
-            char detail[160];
-            snprintf(detail, sizeof(detail),
-                     "unexpected result: err=%d value=%.10g trace_calls=%d",
-                     err, value, g_trace_calls);
-            fail_case("evaluate-step-hook", "2+3*4", detail);
-        }
-    }
+    /* Note: step callback tests removed - use DEBUG_ENABLE system instead */
 
     if (case_matches_filter("command-dispatch", "show process")) {
         CommandState state;
@@ -372,9 +347,17 @@ static void run_api_contract_suite(void) {
         g_tests_selected++;
         commandStateInit(&state);
 
+        /* show process 进入交互模式选择级别 */
         cmd = commandDispatch("show process", &state);
-        if (cmd != COMMAND_RESULT_HANDLED || !state.show_process) {
-            fail_case("command-dispatch", "show process", "failed to enable process mode");
+        if (cmd != COMMAND_RESULT_HANDLED || state.interactive.mode != INPUT_MODE_DEBUG_LEVEL) {
+            fail_case("command-dispatch", "show process", "failed to enter interactive mode");
+            return;
+        }
+
+        /* 用户选择 DEBUG 级别 */
+        commandHandleInteractive("4", &state);
+        if (!state.show_process) {
+            fail_case("command-dispatch", "show process", "failed to enable process mode after selection");
             return;
         }
 

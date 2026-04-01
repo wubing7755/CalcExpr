@@ -77,6 +77,9 @@ cmake_install.cmake
 Makefile
 compile_commands.json
 
+# Agent
+.claude/
+
 # ========== Incredibuild ==========
 *.recipe
 *.tlog
