@@ -5,10 +5,10 @@ Una calculadora de expresiones matemáticas escrita en lenguaje C, que soporta o
 [![C Version](https://img.shields.io/badge/C-C11-blue)](https://en.wikipedia.org/wiki/C_(programming_language))
 [![CMake](https://img.shields.io/badge/CMake-3.10+-blue)](https://cmake.org/)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![CN](https://img.shields.io/badge/中文-red)](README.md)
-[![EN](https://img.shields.io/badge/English-blue)](README-en.md)
+[![CN](https://img.shields.io/badge/中文-red)](README-zh.md)
+[![EN](https://img.shields.io/badge/English-blue)](../README.md)
 
-🌐 **Elegir Idioma**: [English](README-en.md) | [中文](README.md) | **Español**
+🌐 **Elegir Idioma**: [English](../README.md) | [中文](README-zh.md) | **Español**
 
 ## 📚 Descripción del Proyecto
 
