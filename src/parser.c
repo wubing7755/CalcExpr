@@ -95,15 +95,27 @@ typedef struct {
  *   DEBUG_LEVEL_DEBUG  (4): 详细上下文
  *   DEBUG_LEVEL_TRACE  (5): 函数调用树
  *
- * 用法示例：
- *   PARSER_TRACE(DEBUG_LEVEL_ERROR, "Division by zero at pos %zu", pos);
- *   PARSER_TRACE(DEBUG_LEVEL_INFO, "[步骤%u] 读取数字 %.10g", step, value);
- *   PARSER_TRACE(DEBUG_LEVEL_TRACE, "→ parseExpression() depth=%u", parser->depth);
+ * TRACE 级别会根据 depth 添加缩进，每层 depth 增加 2 个空格
  */
-#define PARSER_TRACE(level, fmt, ...)                                           \
+#define PARSER_TRACE(level, depth, fmt, ...)                                     \
   DEBUG_IF((level), DEBUG_MODULE_PARSER,                                        \
-      fprintf(g_debug_output ? g_debug_output : stderr,                          \
-          "[PARSER] " fmt, ##__VA_ARGS__))
+      do {                                                                       \
+        const char *color = g_debug_color ?                                       \
+            ((level) >= DEBUG_LEVEL_TRACE ? DEBUG_ANSI_CYAN :                    \
+             (level) >= DEBUG_LEVEL_DEBUG ? DEBUG_ANSI_BLUE :                    \
+             (level) >= DEBUG_LEVEL_INFO  ? DEBUG_ANSI_GREEN :                  \
+             (level) >= DEBUG_LEVEL_WARN  ? DEBUG_ANSI_YELLOW :                  \
+                                            DEBUG_ANSI_RED DEBUG_ANSI_BOLD) : ""; \
+        const char *reset = g_debug_color ? DEBUG_ANSI_RESET : "";              \
+        if ((level) >= DEBUG_LEVEL_TRACE) {                                      \
+          fprintf(g_debug_output ? g_debug_output : stderr,                       \
+              "%s[PARSER] %*s" fmt "%s\n", color, (int)((depth) * 2),           \
+              "", ##__VA_ARGS__, reset);                                         \
+        } else {                                                                 \
+          fprintf(g_debug_output ? g_debug_output : stderr,                       \
+              "%s[PARSER] " fmt "%s\n", color, ##__VA_ARGS__, reset);           \
+        }                                                                        \
+      } while(0))
 
 /* ========================================================================
  * 函数原型声明（前向声明）
@@ -127,7 +139,7 @@ static void parserSetError(Parser *parser, CalcError err, size_t err_pos);
 static double applyMul(double a, double b, Parser *parser) {
   parser->step_index++;
   const double result = a * b;
-  PARSER_TRACE(DEBUG_LEVEL_INFO, "[步骤%u] %.10g * %.10g = %.10g",
+  PARSER_TRACE(DEBUG_LEVEL_INFO, 0, "[步骤%u] %.10g * %.10g = %.10g",
                parser->step_index, a, b, result);
   return result;
 }
@@ -140,13 +152,13 @@ static double applyMul(double a, double b, Parser *parser) {
 static double applyDiv(double a, double b, Parser *parser, size_t err_pos) {
   if (fpclassify(b) == FP_ZERO) {
     parserSetError(parser, CALC_ERROR_DIV_BY_ZERO, err_pos);
-    PARSER_TRACE(DEBUG_LEVEL_ERROR, "Division by zero at position %zu", err_pos);
+    PARSER_TRACE(DEBUG_LEVEL_ERROR, 0, "Division by zero at position %zu", err_pos);
     return 0.0;
   }
 
   parser->step_index++;
   const double result = a / b;
-  PARSER_TRACE(DEBUG_LEVEL_INFO, "[步骤%u] %.10g / %.10g = %.10g",
+  PARSER_TRACE(DEBUG_LEVEL_INFO, 0, "[步骤%u] %.10g / %.10g = %.10g",
                parser->step_index, a, b, result);
   return result;
 }
@@ -157,7 +169,7 @@ static double applyDiv(double a, double b, Parser *parser, size_t err_pos) {
 static double applyAdd(double a, double b, Parser *parser) {
   parser->step_index++;
   const double result = a + b;
-  PARSER_TRACE(DEBUG_LEVEL_INFO, "[步骤%u] %.10g + %.10g = %.10g",
+  PARSER_TRACE(DEBUG_LEVEL_INFO, 0, "[步骤%u] %.10g + %.10g = %.10g",
                parser->step_index, a, b, result);
   return result;
 }
@@ -168,7 +180,7 @@ static double applyAdd(double a, double b, Parser *parser) {
 static double applySub(double a, double b, Parser *parser) {
   parser->step_index++;
   const double result = a - b;
-  PARSER_TRACE(DEBUG_LEVEL_INFO, "[步骤%u] %.10g - %.10g = %.10g",
+  PARSER_TRACE(DEBUG_LEVEL_INFO, 0, "[步骤%u] %.10g - %.10g = %.10g",
                parser->step_index, a, b, result);
   return result;
 }
@@ -227,13 +239,13 @@ static void parserNextToken(Parser *parser) {
  * @return 计算结果
  */
 static double parserParsePrimary(Parser *parser) {
-  PARSER_TRACE(DEBUG_LEVEL_TRACE, "→ parsePrimary() depth=%u", parser->depth);
+  PARSER_TRACE(DEBUG_LEVEL_TRACE, parser->depth, "→ parsePrimary()", "");
 
   /* 情况 1：数字 */
   if (parser->lexer.current.type == TOKEN_NUMBER) {
     const double value = parser->lexer.current.value;
     parser->step_index++;
-    PARSER_TRACE(DEBUG_LEVEL_INFO, "[步骤%u] 读取数字 %.10g", parser->step_index, value);
+    PARSER_TRACE(DEBUG_LEVEL_INFO, 0, "[步骤%u] 读取数字 %.10g", parser->step_index, value);
     parserNextToken(parser);
     return value;
   }
@@ -287,7 +299,7 @@ static double parserParsePrimary(Parser *parser) {
  * @return 计算结果
  */
 static double parserParseUnary(Parser *parser) {
-  PARSER_TRACE(DEBUG_LEVEL_TRACE, "→ parseUnary() depth=%u", parser->depth);
+  PARSER_TRACE(DEBUG_LEVEL_TRACE, parser->depth, "→ parseUnary()", "");
 
   /* 迭代处理一元运算符链：统计负号个数 */
   int negative_count = 0;
@@ -307,7 +319,7 @@ static double parserParseUnary(Parser *parser) {
   /* 应用负号（奇数个负号则取反） */
   if (negative_count > 0) {
     result = -result;
-    PARSER_TRACE(DEBUG_LEVEL_INFO, "[步骤%u] (-)^%d %.10g = %.10g",
+    PARSER_TRACE(DEBUG_LEVEL_INFO, 0, "[步骤%u] (-)^%d %.10g = %.10g",
                  parser->step_index, negative_count, -result, result);
   }
 
@@ -327,7 +339,7 @@ static double parserParseUnary(Parser *parser) {
  * @return 计算结果
  */
 static double parserParseTerm(Parser *parser) {
-  PARSER_TRACE(DEBUG_LEVEL_TRACE, "→ parseTerm() depth=%u", parser->depth);
+  PARSER_TRACE(DEBUG_LEVEL_TRACE, parser->depth, "→ parseTerm()", "");
 
   double left = parserParseUnary(parser); /* 解析第一个操作数 */
   PARSER_CHECK();
@@ -370,7 +382,7 @@ static double parserParseTerm(Parser *parser) {
  * @return 计算结果
  */
 static double parserParseExpression(Parser *parser) {
-  PARSER_TRACE(DEBUG_LEVEL_TRACE, "→ parseExpression() depth=%u", parser->depth);
+  PARSER_TRACE(DEBUG_LEVEL_TRACE, parser->depth, "→ parseExpression()", "");
 
   double left = parserParseTerm(parser); /* 解析第一个操作数 */
   PARSER_CHECK();

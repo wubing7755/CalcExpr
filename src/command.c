@@ -112,12 +112,18 @@ void commandHandleInteractive(const char* input, CommandState* state) {
         }
 
         if (level >= DEBUG_LEVEL_ERROR && level <= DEBUG_LEVEL_TRACE) {
-            debug_set_level(level);
-            debug_set_modules(DEBUG_MODULE_ALL);
             state->interactive.mode = INPUT_MODE_NORMAL;
             state->interactive.prompt = NULL;
             state->show_process = true;
+
+#if DEBUG_ENABLE
+            debug_set_level(level);
+            debug_set_modules(DEBUG_MODULE_ALL);
             logger_log(LOG_INFO, "已开启调试输出，级别=%d。\n\n", debug_get_level());
+#else
+            logger_log(LOG_ERROR, "错误: 调试系统未启用。\n");
+            logger_log(LOG_INFO, "提示: 请使用 -DENABLE_DEBUG=ON 重新编译项目以查看调试输出。\n\n");
+#endif
         } else {
             logger_log(LOG_ERROR, "无效选择，请输入 1-5 之间的数字。\n");
             logger_log(LOG_INFO, "请选择 (1-5): ");
@@ -252,7 +258,9 @@ static void handleShowProcess(CommandState* state)
 static void handleHideProcess(CommandState* state)
 {
     state->show_process = false;
+#if DEBUG_ENABLE
     debug_set_level(DEBUG_LEVEL_NONE);
+#endif
     logger_log(LOG_INFO, "已关闭调试输出。\n\n");
 }
 

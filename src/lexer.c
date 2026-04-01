@@ -75,7 +75,9 @@ void lexerDebugPrintAll(Lexer *lexer) {
     size_t saved_err_pos = lexer->err_pos;
     size_t saved_pos = lexer->pos;
 
-    printf("[LEXER] ");
+    const char *color = g_debug_color ? DEBUG_ANSI_CYAN : "";
+    const char *reset = g_debug_color ? DEBUG_ANSI_RESET : "";
+    printf("%s[LEXER]%s ", color, reset);
     lexer->pos = 0;
     lexer->err = CALC_OK;
 
@@ -123,7 +125,6 @@ void lexerDebugPrintAll(Lexer *lexer) {
             printf(" | ");
         }
     }
-
     printf("\n");
 
     lexer->current.type = saved_type;
