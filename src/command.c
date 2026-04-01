@@ -215,9 +215,8 @@ static void handleQuit(CommandState* state)
 
 /**
  * @brief 处理 "show help" 命令
- * 
+ *
  * 显示所有可用命令的列表和说明。
- * 这是一个前向声明，因为 handleShowHelp 在 CommandSpec 数组之前定义。
  */
 static void handleShowHelp(CommandState* state);
 
@@ -243,24 +242,28 @@ static const char* TOK_Q[] = {"q"};
 
 /**
  * @brief 命令规格表
- * 
+ *
  * 存储所有支持的命令及其元信息。
- * 
+ *
+ * ## 字段说明
+ *   syntax      : 命令语法原文
+ *   description : 命令描述（用于帮助信息）
+ *   tokens      : 分词后的词数组
+ *   token_count : 词的个数
+ *   handler     : 命令处理函数
+ *
  * ## 设计要点
- * 
  *   1. 按优先级排列：常用命令放前面
  *   2. 每个命令有多个别名（如 quit、exit、q）
- *   3. 使用指定初始化器，清晰明了
  */
 static const CommandSpec COMMAND_SPECS[] = {
-    /* 语法              描述                    词数组                    词数    处理函数 */
-    {"show process",  "开启计算过程输出",   TOK_SHOW_PROCESS,  2U,  handleShowProcess},
-    {"hide process",  "关闭计算过程输出",   TOK_HIDE_PROCESS,  2U,  handleHideProcess},
-    {"show help",     "显示命令帮助",       TOK_SHOW_HELP,     2U,  handleShowHelp},
-    {"help",          "显示命令帮助",       TOK_HELP,          1U,  handleShowHelp},
-    {"quit",          "退出程序",           TOK_QUIT,          1U,  handleQuit},
-    {"exit",          "退出程序",           TOK_EXIT,          1U,  handleQuit},
-    {"q",             "退出程序",           TOK_Q,             1U,  handleQuit}
+    {"show process", "开启计算过程输出", TOK_SHOW_PROCESS, 2U, handleShowProcess},
+    {"hide process", "关闭计算过程输出", TOK_HIDE_PROCESS, 2U, handleHideProcess},
+    {"show help",    "显示命令帮助",    TOK_SHOW_HELP,    2U, handleShowHelp},
+    {"help",         "显示命令帮助",    TOK_HELP,         1U, handleShowHelp},
+    {"quit",         "退出程序",        TOK_QUIT,         1U, handleQuit},
+    {"exit",         "退出程序",        TOK_EXIT,         1U, handleQuit},
+    {"q",            "退出程序",        TOK_Q,            1U, handleQuit}
 };
 
 /* ========================================================================
@@ -269,21 +272,18 @@ static const CommandSpec COMMAND_SPECS[] = {
 
 /**
  * @brief 显示帮助信息
- * 
+ *
  * 遍历命令规格表，输出每个命令的语法和描述。
- * 
- * @param state 命令状态指针（此函数不使用）
  */
 static void handleShowHelp(CommandState* state)
 {
     size_t i;
-    (void)state;  /* 显式声明未使用，避免编译器警告 */
+    (void)state;  /* 未使用参数 */
 
     logger_log(LOG_INFO, "【命令列表】\n");
-    
-    /* 遍历所有命令规格 */
+
+    /* 遍历所有命令规格并输出 */
     for (i = 0; i < sizeof(COMMAND_SPECS) / sizeof(COMMAND_SPECS[0]); ++i) {
-        /* 使用左对齐格式化，宽度13，确保描述对齐 */
         logger_log(LOG_INFO, "- %-13s : %s\n",
                    COMMAND_SPECS[i].syntax, COMMAND_SPECS[i].description);
     }

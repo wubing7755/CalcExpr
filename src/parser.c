@@ -23,12 +23,13 @@
  *           └─ parseUnary()
  *               └─ parsePrimary()  ← 递归终止（叶子节点）
  *
- * ## 特点
+ * ## 设计特点
  *
  *   - 4 层结构，每层 < 30 行
  *   - 文法与代码严格一一对应
  *   - 错误处理统一使用 PARSER_CHECK 宏
- *   - 运算符通过 applyMul/applyDiv 封装
+ *   - 运算符通过 applyMul/applyDiv/applyAdd/applySub 封装
+ *   - 一元运算符使用迭代处理，避免栈溢出
  */
 
 #include "parser.h"
@@ -123,13 +124,16 @@ static void parserSetError(Parser *parser, CalcError err, size_t err_pos);
 
 /* ========================================================================
  * 运算符求值函数
+ *
+ * 这些函数执行实际的算术运算，并更新步骤计数和回调。
+ * 统一通过 parserEmitStep 报告计算步骤。
  * ======================================================================== */
 
 /**
  * @brief 乘法运算
  *
- * @param a 左操作数
- * @param b 右操作数
+ * @param a      左操作数
+ * @param b      右操作数
  * @param parser 解析器（用于步骤回调）
  * @return 运算结果
  */
@@ -141,6 +145,17 @@ static double applyMul(double a, double b, Parser *parser) {
   return result;
 }
 
+/**
+ * @brief 除法运算
+ *
+ * 检查除数是否为零，发生错误时设置错误状态。
+ *
+ * @param a       左操作数（被除数）
+ * @param b       右操作数（除数）
+ * @param parser  解析器（用于步骤回调和错误设置）
+ * @param err_pos 错误位置
+ * @return 运算结果（发生除零错误时返回 0）
+ */
 static double applyDiv(double a, double b, Parser *parser, size_t err_pos) {
   if (fpclassify(b) == FP_ZERO) {
     parserSetError(parser, CALC_ERROR_DIV_BY_ZERO, err_pos);
@@ -155,6 +170,14 @@ static double applyDiv(double a, double b, Parser *parser, size_t err_pos) {
   return result;
 }
 
+/**
+ * @brief 加法运算
+ *
+ * @param a      左操作数
+ * @param b      右操作数
+ * @param parser 解析器（用于步骤回调）
+ * @return 运算结果
+ */
 static double applyAdd(double a, double b, Parser *parser) {
   const double result = a + b;
   parser->step_index++;
@@ -163,6 +186,14 @@ static double applyAdd(double a, double b, Parser *parser) {
   return result;
 }
 
+/**
+ * @brief 减法运算
+ *
+ * @param a      左操作数
+ * @param b      右操作数
+ * @param parser 解析器（用于步骤回调）
+ * @return 运算结果
+ */
 static double applySub(double a, double b, Parser *parser) {
   const double result = a - b;
   parser->step_index++;
@@ -175,13 +206,30 @@ static double applySub(double a, double b, Parser *parser) {
  * 错误处理
  * ======================================================================== */
 
+/**
+ * @brief 设置解析器错误状态
+ *
+ * 仅设置第一个错误（first error only），避免错误信息被覆盖。
+ *
+ * @param parser   解析器
+ * @param err      错误码
+ * @param err_pos  错误位置
+ */
 static void parserSetError(Parser *parser, CalcError err, size_t err_pos) {
-  if (parser->err == CALC_OK) {
+  if (parser->err == CALC_OK) {  /* 仅记录第一个错误 */
     parser->err = err;
     parser->err_pos = err_pos;
   }
 }
 
+/**
+ * @brief 获取下一个 Token 并传播错误
+ *
+ * 调用词法分析器的 lexerNextToken，然后检查是否发生错误。
+ * 如果词法分析出错，将错误传播到解析器状态。
+ *
+ * @param parser 解析器
+ */
 static void parserNextToken(Parser *parser) {
   lexerNextToken(&parser->lexer);
 
@@ -426,6 +474,25 @@ static double parserParseExpression(Parser *parser) {
  * 公共 API
  * ======================================================================== */
 
+/**
+ * @brief 评估数学表达式
+ *
+ * 解析并计算表达式的值。
+ *
+ * 处理流程：
+ *   1. 初始化词法分析器
+ *   2. 设置解析器状态和选项
+ *   3. 获取第一个 Token
+ *   4. 递归下降解析表达式
+ *   5. 检查是否所有 Token 都被消费
+ *   6. 返回结果或错误
+ *
+ * @param expression 要计算的数学表达式
+ * @param options    评估选项（可为 NULL）
+ * @param result     结果输出
+ * @param err_pos    错误位置（可为 NULL）
+ * @return 错误码
+ */
 CalcError parserEvaluateExpression(const char *expression,
                                    const CalcEvalOptions *options,
                                    double *result, size_t *err_pos) {

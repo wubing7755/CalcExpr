@@ -62,8 +62,20 @@ void calcEvalOptionsInit(CalcEvalOptions *options) {
   options->user_data = NULL;
 }
 
+/**
+ * @brief 评估数学表达式
+ *
+ * 公共入口函数，对表达式进行验证后委托给 parser 模块。
+ *
+ * @param expression 要计算的数学表达式
+ * @param options   评估选项（可为 NULL）
+ * @param result    结果输出指针
+ * @param err_pos   错误位置（可为 NULL）
+ * @return 错误码
+ */
 CalcError evaluate(const char *expression, const CalcEvalOptions *options,
                    double *result, size_t *err_pos) {
+  /* 参数验证：表达式为空或结果指针为 NULL */
   if (expression == NULL || *expression == '\0' || result == NULL) {
     if (err_pos != NULL) {
       *err_pos = 0;
