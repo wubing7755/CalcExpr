@@ -51,20 +51,35 @@
  * ======================================================================== */
 
 /**
+ * @brief 交互式输入状态
+ *
+ * 用于处理需要多步输入的命令交互。
+ */
+typedef enum {
+    INPUT_MODE_NORMAL,         /**< 正常模式：表达式或命令 */
+    INPUT_MODE_DEBUG_LEVEL,    /**< 等待选择调试级别 */
+} InputMode;
+
+/**
+ * @brief 交互状态结构
+ *
+ * 当命令需要额外输入时，设置交互状态并返回提示。
+ */
+typedef struct {
+    InputMode mode;         /**< 当前输入模式 */
+    const char* prompt;    /**< 提示信息 */
+} InteractiveState;
+
+/**
  * @brief 命令状态结构
  *
  * 存储命令处理模块的运行时状态。
- *
- * ## 字段说明
- *
- *   - show_process : 是否显示计算过程
- *   - should_exit  : 是否请求退出程序
- *   - last_input   : 上一次命令输入（供处理器解析参数）
  */
 typedef struct {
     bool show_process;           /**< 是否显示调试输出 */
     bool should_exit;           /**< 是否请求退出 */
     const char* last_input;     /**< 上一次命令输入（供处理器解析参数） */
+    InteractiveState interactive; /**< 交互状态 */
 } CommandState;
 
 /**
@@ -98,6 +113,16 @@ typedef enum {
  * @param state 要初始化的状态指针
  */
 void commandStateInit(CommandState* state);
+
+/**
+ * @brief 处理交互式输入
+ *
+ * 当处于交互模式时，调用此函数处理用户输入。
+ *
+ * @param input 用户输入
+ * @param state 命令状态
+ */
+void commandHandleInteractive(const char* input, CommandState* state);
 
 /**
  * @brief 分发并执行命令

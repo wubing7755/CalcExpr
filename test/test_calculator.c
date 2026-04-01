@@ -347,9 +347,17 @@ static void run_api_contract_suite(void) {
         g_tests_selected++;
         commandStateInit(&state);
 
+        /* show process 进入交互模式选择级别 */
         cmd = commandDispatch("show process", &state);
-        if (cmd != COMMAND_RESULT_HANDLED || !state.show_process) {
-            fail_case("command-dispatch", "show process", "failed to enable process mode");
+        if (cmd != COMMAND_RESULT_HANDLED || state.interactive.mode != INPUT_MODE_DEBUG_LEVEL) {
+            fail_case("command-dispatch", "show process", "failed to enter interactive mode");
+            return;
+        }
+
+        /* 用户选择 DEBUG 级别 */
+        commandHandleInteractive("4", &state);
+        if (!state.show_process) {
+            fail_case("command-dispatch", "show process", "failed to enable process mode after selection");
             return;
         }
 

@@ -125,7 +125,13 @@ int main(int argc, char *argv[])
         size_t err_pos;
         CalcError err;
 
-        logger_log(LOG_INFO, "请输入表达式> ");
+        /* -------- 交互模式提示 -------- */
+        if (command_state.interactive.mode != INPUT_MODE_NORMAL &&
+            command_state.interactive.prompt != NULL) {
+            logger_log(LOG_INFO, "%s", command_state.interactive.prompt);
+        } else {
+            logger_log(LOG_INFO, "请输入表达式> ");
+        }
 
         input_status = readInputLine(input, sizeof(input));
 
@@ -144,6 +150,12 @@ int main(int argc, char *argv[])
 
         /* 跳过空输入 */
         if (!isValidExpression(input)) {
+            continue;
+        }
+
+        /* -------- 交互模式处理 -------- */
+        if (command_state.interactive.mode != INPUT_MODE_NORMAL) {
+            commandHandleInteractive(input, &command_state);
             continue;
         }
 

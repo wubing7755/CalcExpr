@@ -15,7 +15,7 @@
       "preLaunchTask": "CMake Build"
     },
     {
-      "name": "Calculator (Debug TRACE)",
+      "name": "Calculator (Full Trace)",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/build/bin/calculator",
@@ -28,7 +28,7 @@
       "preLaunchTask": "CMake Clean and Build (Debug)"
     },
     {
-      "name": "Calculator (Debug DEBUG)",
+      "name": "Calculator (Show Steps)",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/build/bin/calculator",
@@ -41,7 +41,7 @@
       "preLaunchTask": "CMake Clean and Build (Debug)"
     },
     {
-      "name": "Calculator (Debug Parser)",
+      "name": "Calculator (Parser Detail)",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/build/bin/calculator",
@@ -54,7 +54,7 @@
       "preLaunchTask": "CMake Clean and Build (Debug)"
     },
     {
-      "name": "Calculator (Debug Lexer)",
+      "name": "Calculator (Lexer Detail)",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/build/bin/calculator",

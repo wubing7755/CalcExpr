@@ -79,6 +79,52 @@ typedef struct {
 } CommandSpec;
 
 /* ========================================================================
+ * 交互状态处理
+ * ======================================================================== */
+
+/**
+ * @brief 设置交互状态
+ *
+ * @param interactive 交互状态指针
+ * @param mode        输入模式
+ * @param prompt      提示信息
+ */
+static void setInteractive(InteractiveState* interactive, InputMode mode, const char* prompt) {
+    interactive->mode = mode;
+    interactive->prompt = prompt;
+}
+
+/**
+ * @brief 处理交互式输入
+ *
+ * 当处于交互模式时，调用此函数处理用户输入。
+ *
+ * @param input 用户输入
+ * @param state 命令状态
+ */
+void commandHandleInteractive(const char* input, CommandState* state) {
+    if (state->interactive.mode == INPUT_MODE_DEBUG_LEVEL) {
+        int level = 0;
+
+        /* 解析用户输入 */
+        if (input != NULL && *input >= '1' && *input <= '5') {
+            level = *input - '0';
+        }
+
+        if (level >= DEBUG_LEVEL_ERROR && level <= DEBUG_LEVEL_TRACE) {
+            debug_set_level(level);
+            state->interactive.mode = INPUT_MODE_NORMAL;
+            state->interactive.prompt = NULL;
+            state->show_process = true;
+            logger_log(LOG_INFO, "已开启调试输出。\n\n");
+        } else {
+            logger_log(LOG_ERROR, "无效选择，请输入 1-5 之间的数字。\n");
+            logger_log(LOG_INFO, "请选择 (1-5): ");
+        }
+    }
+}
+
+/* ========================================================================
  * 工具函数
  * ======================================================================== */
 
@@ -177,41 +223,29 @@ static size_t tokenize(char* text, char* tokens[], size_t max_tokens)
 /**
  * @brief 处理 "show process" 命令
  *
- * 开启调试输出。支持的格式：
- *   /show process     - 设置 DEBUG 级别（显示计算步骤）
- *   /show process 4  - 同上，设置 DEBUG 级别
- *   /show process 5  - 设置 TRACE 级别（显示完整调用链）
+ * 显示调试级别选项菜单，进入交互模式等待用户选择。
  *
  * @param state 命令状态指针
  */
 static void handleShowProcess(CommandState* state)
 {
-    int level = DEBUG_LEVEL_DEBUG;  /* 默认 DEBUG 级别 */
+    (void)state;  /* 未使用参数 */
 
-    /* 解析最后一个参数作为级别 */
-    if (state->last_input != NULL) {
-        const char* input = state->last_input;
-        /* 跳过开头的 '/' 和空格，查找最后一个数字 */
-        const char* p = input + strlen(input) - 1;
-        while (p > input && (*p < '0' || *p > '9')) {
-            p--;
-        }
-        if (p >= input && *p >= '0' && *p <= '9') {
-            level = *p - '0';
-            if (level < DEBUG_LEVEL_DEBUG || level > DEBUG_LEVEL_TRACE) {
-                level = DEBUG_LEVEL_DEBUG;  /* 无效级别，使用默认值 */
-            }
-        }
-    }
-
-    state->show_process = true;
-    debug_set_level(level);
-
-    if (level == DEBUG_LEVEL_TRACE) {
-        logger_log(LOG_INFO, "已开启调试输出（TRACE 级别）。\n\n");
-    } else {
-        logger_log(LOG_INFO, "已开启调试输出（DEBUG 级别）。\n\n");
-    }
+    setInteractive(&state->interactive, INPUT_MODE_DEBUG_LEVEL,
+        "调试级别选项：\n"
+        "  1. 仅错误     - 关闭调试输出\n"
+        "  2. 警告+信息  - 显示一般信息\n"
+        "  3. 计算步骤   - 显示表达式求值过程\n"
+        "  4. 解析器跟踪 - 显示语法分析详情\n"
+        "  5. 完整跟踪   - 显示全部调用链\n"
+        "请选择 (1-5): ");
+    logger_log(LOG_INFO, "调试级别选项：\n"
+                            "  1. 仅错误     - 关闭调试输出\n"
+                            "  2. 警告+信息  - 显示一般信息\n"
+                            "  3. 计算步骤   - 显示表达式求值过程\n"
+                            "  4. 解析器跟踪 - 显示语法分析详情\n"
+                            "  5. 完整跟踪   - 显示全部调用链\n"
+                            "请选择 (1-5): ");
 }
 
 /**
@@ -334,6 +368,8 @@ void commandStateInit(CommandState* state)
     state->show_process = false;  /* 默认不显示调试输出 */
     state->should_exit = false;     /* 默认不退出 */
     state->last_input = NULL;       /* 无上一次输入 */
+    state->interactive.mode = INPUT_MODE_NORMAL;
+    state->interactive.prompt = NULL;
 }
 
 /**
@@ -402,6 +438,10 @@ CommandResult commandDispatch(const char* input, CommandState* state)
     if (!isalpha((unsigned char)tokens[0][0])) {
         return COMMAND_RESULT_NOT_COMMAND;
     }
+
+    /* 收到新命令，重置交互状态 */
+    state->interactive.mode = INPUT_MODE_NORMAL;
+    state->interactive.prompt = NULL;
 
     /* ---------------------------------------------------------------
      * 步骤3: 与命令规格表逐一比对
