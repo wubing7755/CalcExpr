@@ -312,13 +312,13 @@ static const char* TOK_Q[] = {"q"};
  *   2. 每个命令有多个别名（如 quit、exit、q）
  */
 static const CommandSpec COMMAND_SPECS[] = {
-    {"show process", "开启计算过程输出", TOK_SHOW_PROCESS, 2U, handleShowProcess},
-    {"hide process", "关闭计算过程输出", TOK_HIDE_PROCESS, 2U, handleHideProcess},
-    {"show help",    "显示命令帮助",    TOK_SHOW_HELP,    2U, handleShowHelp},
-    {"help",         "显示命令帮助",    TOK_HELP,         1U, handleShowHelp},
-    {"quit",         "退出程序",        TOK_QUIT,         1U, handleQuit},
-    {"exit",         "退出程序",        TOK_EXIT,         1U, handleQuit},
-    {"q",            "退出程序",        TOK_Q,            1U, handleQuit}
+    {"/show process", "开启计算过程输出", TOK_SHOW_PROCESS, 2U, handleShowProcess},
+    {"/hide process", "关闭计算过程输出", TOK_HIDE_PROCESS, 2U, handleHideProcess},
+    {"/show help",    "显示命令帮助",    TOK_SHOW_HELP,    2U, handleShowHelp},
+    {"/help",         "显示命令帮助",    TOK_HELP,         1U, handleShowHelp},
+    {"/quit",         "退出程序",        TOK_QUIT,         1U, handleQuit},
+    {"/exit",         "退出程序",        TOK_EXIT,         1U, handleQuit},
+    {"/q",            "退出程序",        TOK_Q,            1U, handleQuit}
 };
 
 /* ========================================================================

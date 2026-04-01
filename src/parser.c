@@ -436,7 +436,7 @@ CalcError parserEvaluateExpression(const char *expression,
   /* 初始化词法分析器 */
   lexerInit(&parser.lexer, expression);
 
-#ifdef DEBUG_ENABLE
+#if DEBUG_ENABLE
   /* 预扫描所有 token 用于调试输出 */
   lexerDebugPrintAll(&parser.lexer);
 #endif
