@@ -52,8 +52,6 @@
 
 typedef struct {
   Lexer lexer;              /**< 词法分析器 */
-  CalcError err;            /**< 当前错误状态 */
-  size_t err_pos;           /**< 错误发生位置 */
   unsigned depth;           /**< 当前递归深度 */
   unsigned max_depth;       /**< 最大允许深度 */
   unsigned step_index;      /**< 计算步骤计数器（用于调试输出） */
@@ -73,12 +71,12 @@ typedef struct {
  *   PARSER_CHECK();  // 如果有错误，立即返回 0.0
  *
  * 展开后：
- *   do { if ((parser)->err != CALC_OK) return 0.0; } while(0)
+ *   do { if ((parser)->lexer.err != CALC_OK) return 0.0; } while(0)
  */
 #define PARSER_CHECK()                                                         \
   do {                                                                         \
-    if ((parser)->err != CALC_OK)                                              \
-      return 0.0;                                                              \
+    if ((parser)->lexer.err != CALC_OK)                                        \
+      return 0.0;                                                             \
   } while (0)
 
 /* ========================================================================
@@ -199,26 +197,22 @@ static double applySub(double a, double b, Parser *parser) {
  * @param err_pos  错误位置
  */
 static void parserSetError(Parser *parser, CalcError err, size_t err_pos) {
-  if (parser->err == CALC_OK) {  /* 仅记录第一个错误 */
-    parser->err = err;
-    parser->err_pos = err_pos;
+  if (parser->lexer.err == CALC_OK) {  /* 仅记录第一个错误 */
+    parser->lexer.err = err;
+    parser->lexer.err_pos = err_pos;
   }
 }
 
 /**
- * @brief 获取下一个 Token 并传播错误
+ * @brief 获取下一个 Token
  *
- * 调用词法分析器的 lexerNextToken，然后检查是否发生错误。
- * 如果词法分析出错，将错误传播到解析器状态。
+ * 调用词法分析器的 lexerNextToken 获取下一个 token。
+ * 词法分析器的错误状态存储在 lexer.err 中，可通过 PARSER_CHECK 检查。
  *
  * @param parser 解析器
  */
 static void parserNextToken(Parser *parser) {
   lexerNextToken(&parser->lexer);
-
-  if (parser->lexer.err != CALC_OK) {
-    parserSetError(parser, parser->lexer.err, parser->lexer.err_pos);
-  }
 }
 
 /* ========================================================================
@@ -446,8 +440,6 @@ CalcError parserEvaluateExpression(const char *expression,
 #endif
 
   /* 初始化解析器状态 */
-  parser.err = CALC_OK;
-  parser.err_pos = 0;
   parser.depth = 0U;
   parser.step_index = 0U;
   parser.max_depth = PARSER_DEFAULT_MAX_RECURSION;
@@ -459,16 +451,16 @@ CalcError parserEvaluateExpression(const char *expression,
   const double value = parserParseExpression(&parser);
 
   /* 语法检查：确保所有 token 都被消费 */
-  if (parser.err == CALC_OK && parser.lexer.current.type != TOKEN_END) {
+  if (parser.lexer.err == CALC_OK && parser.lexer.current.type != TOKEN_END) {
     parserSetError(&parser, CALC_ERROR_SYNTAX, parser.lexer.current.start_pos);
   }
 
   /* 返回结果或错误 */
-  if (parser.err != CALC_OK) {
+  if (parser.lexer.err != CALC_OK) {
     if (err_pos != NULL) {
-      *err_pos = parser.err_pos;
+      *err_pos = parser.lexer.err_pos;
     }
-    return parser.err;
+    return parser.lexer.err;
   }
 
   *result = value;
