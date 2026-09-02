@@ -11,14 +11,9 @@
 
 #define INPUT_BUFFER_SIZE 1024U
 
-typedef enum {
-    INPUT_OK,
-    INPUT_EOF,
-    INPUT_TRUNCATED
-} InputReadStatus;
+typedef enum { INPUT_OK, INPUT_EOF, INPUT_TRUNCATED } input_read_status_t;
 
-static void printWelcome(void)
-{
+static void print_welcome(void) {
     logger_log(LOG_INFO, "===========================================\n");
     logger_log(LOG_INFO, "       C语言控制台计算器 v2.0\n");
     logger_log(LOG_INFO, "===========================================\n");
@@ -26,8 +21,7 @@ static void printWelcome(void)
     logger_log(LOG_INFO, "输入 'quit' 或 'exit' 退出程序\n\n");
 }
 
-static void printHelp(void)
-{
+static void print_help(void) {
     logger_log(LOG_INFO, "【使用提示】\n");
     logger_log(LOG_INFO, "- 直接输入数学表达式，例如: 2+3*4\n");
     logger_log(LOG_INFO, "- 使用括号改变优先级，例如: (2+3)*4\n");
@@ -37,8 +31,7 @@ static void printHelp(void)
     logger_log(LOG_INFO, "- 输入 /hide process 关闭计算过程输出\n\n");
 }
 
-static InputReadStatus readInputLine(char* input, size_t capacity)
-{
+static input_read_status_t read_input_line(char *input, size_t capacity) {
     size_t len;
     int ch;
 
@@ -60,8 +53,7 @@ static InputReadStatus readInputLine(char* input, size_t capacity)
     return INPUT_TRUNCATED;
 }
 
-static bool isValidExpression(const char* input)
-{
+static bool is_valid_expression(const char *input) {
     while (*input != '\0') {
         if (!isspace((unsigned char)*input)) {
             return true;
@@ -71,8 +63,7 @@ static bool isValidExpression(const char* input)
     return false;
 }
 
-static void printResult(const char* expression, double result)
-{
+static void print_result(const char *expression, double result) {
     logger_log(LOG_INFO, "表达式: %s\n", expression);
     logger_log(LOG_INFO, "结果:   %.10g\n\n", result);
 }
@@ -94,9 +85,8 @@ static void printResult(const char* expression, double result)
  *      - 输出结果或错误
  *   4. 清理并退出
  */
-int main(int argc, char *argv[])
-{
-    CommandState command_state;
+int main(int argc, char *argv[]) {
+    command_state_t command_state;
 
     /* -------- 初始化阶段 -------- */
 
@@ -107,23 +97,23 @@ int main(int argc, char *argv[])
     platform_init();
     platform_enable_utf8();
     logger_init(LOG_INFO);
-    commandStateInit(&command_state);
+    command_state_init(&command_state);
 
     if (debug_active) {
         DEBUG_INFO("调试模式已开启，级别=%d", debug_get_level());
     }
 
-    printWelcome();
-    printHelp();
+    print_welcome();
+    print_help();
 
     /* -------- REPL 循环 -------- */
 
     while (true) {
         char input[INPUT_BUFFER_SIZE];
-        InputReadStatus input_status;
+        input_read_status_t input_status;
         double result;
         size_t err_pos;
-        CalcError err;
+        calc_error_t err;
 
         /* -------- 交互模式提示 -------- */
         if (command_state.interactive.mode != INPUT_MODE_NORMAL &&
@@ -133,7 +123,7 @@ int main(int argc, char *argv[])
             logger_log(LOG_INFO, "请输入表达式> ");
         }
 
-        input_status = readInputLine(input, sizeof(input));
+        input_status = read_input_line(input, sizeof(input));
 
         /* 处理输入结束（Ctrl+D 或 Ctrl+Z） */
         if (input_status == INPUT_EOF) {
@@ -149,20 +139,20 @@ int main(int argc, char *argv[])
         }
 
         /* 跳过空输入 */
-        if (!isValidExpression(input)) {
+        if (!is_valid_expression(input)) {
             continue;
         }
 
         /* -------- 交互模式处理 -------- */
         if (command_state.interactive.mode != INPUT_MODE_NORMAL) {
-            commandHandleInteractive(input, &command_state);
+            command_handle_interactive(input, &command_state);
             continue;
         }
 
         /* -------- 命令处理 -------- */
         /* 以 '/' 开头的输入视为命令，跳过 '/' 前缀后分发 */
         if (input[0] == '/') {
-            const CommandResult cmd_result = commandDispatch(input + 1, &command_state);
+            const command_result_t cmd_result = command_dispatch(input + 1, &command_state);
             if (cmd_result != COMMAND_RESULT_NOT_COMMAND) {
                 if (command_state.should_exit) {
                     logger_log(LOG_INFO, "感谢使用，再见！\n");
@@ -182,16 +172,16 @@ int main(int argc, char *argv[])
         /* -------- 结果输出 -------- */
 
         if (err == CALC_OK) {
-            printResult(input, result);
+            print_result(input, result);
             continue;
         }
 
         /* 输出错误信息 */
         if (err_pos < strlen(input)) {
             logger_log(LOG_ERROR, "错误: %s (位置: %zu, 附近: '%.16s')\n\n",
-                       calcGetErrorMessage(err), err_pos, input + err_pos);
+                       calc_get_error_message(err), err_pos, input + err_pos);
         } else {
-            logger_log(LOG_ERROR, "错误: %s\n\n", calcGetErrorMessage(err));
+            logger_log(LOG_ERROR, "错误: %s\n\n", calc_get_error_message(err));
         }
     }
 

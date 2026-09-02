@@ -68,38 +68,28 @@ CalcExpr/
 ### Build Project (CMake)
 
 ```bash
-# 1. Create build directory
-mkdir build && cd build
+# 配置 + 构建（Ninja Debug 预设，需要 Ninja）
+cmake --preset ninja-debug
+cmake --build --preset ninja-debug
 
-# 2. Configure based on your platform
-# Windows MinGW:
-cmake -G "MinGW Makefiles" ..
-
-# Windows MSVC:
-cmake -G "Visual Studio 17 2022" ..
-
-# Linux/macOS:
-cmake ..
-
-# 3. Build
-cmake --build .
+# 其他预设：ninja-release / ninja-asan / ninja-coverage / debug / release
 ```
 
 ### Run the Program
 
 ```bash
 # Windows
-./bin/calculator.exe
+./build/ninja-debug/bin/calculator.exe
 
 # Linux / macOS
-./bin/calculator
+./build/ninja-debug/bin/calculator
 ```
 
 ### Interactive Debug
 
 ```bash
 # Enable debug mode
-./bin/calculator --debug
+./build/ninja-debug/bin/calculator --debug
 
 # Use commands in program
 /show process   # Interactively select debug level
@@ -128,10 +118,10 @@ The project uses CTest for testing.
 
 ```bash
 # Run all tests
-ctest --output-on-failure
+ctest --preset ninja-debug --output-on-failure
 
 # Run specific test suite
-ctest -R calc_tests_error --output-on-failure
+ctest --preset ninja-debug -R calc_tests_error --output-on-failure
 ```
 
 Available test suites:

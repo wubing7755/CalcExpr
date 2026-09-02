@@ -1,0 +1,6 @@
+CompileFlags:
+  CompilationDatabase: build/ninja-debug
+  Add:
+    - -Iinclude
+    - -Isrc
+    - -std=c11

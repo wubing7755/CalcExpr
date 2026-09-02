@@ -28,27 +28,26 @@ static const char *g_error_messages[] = {
  * ======================================================================== */
 
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
-_Static_assert(sizeof(g_error_messages) / sizeof(g_error_messages[0]) ==
-                   CALC_ERROR_LAST + 1,
-               "Error message array size does not match CalcError enum");
+_Static_assert(sizeof(g_error_messages) / sizeof(g_error_messages[0]) == CALC_ERROR_LAST + 1,
+               "Error message array size does not match calc_error_t enum");
 #endif
 
 /* ========================================================================
  * 公共 API 实现
  * ======================================================================== */
 
-const char *calcGetErrorMessage(CalcError err) {
-  const size_t count = sizeof(g_error_messages) / sizeof(g_error_messages[0]);
+const char *calc_get_error_message(calc_error_t err) {
+    const size_t count = sizeof(g_error_messages) / sizeof(g_error_messages[0]);
 
-  if (err >= 0 && (size_t)err < count && g_error_messages[err] != NULL) {
-    return g_error_messages[err];
-  }
+    if (err >= 0 && (size_t)err < count && g_error_messages[err] != NULL) {
+        return g_error_messages[err];
+    }
 
-  return "Unknown error";
+    return "Unknown error";
 }
 
-const char *parserGetErrorMessage(CalcError err) {
-  return calcGetErrorMessage(err);
+const char *parser_get_error_message(calc_error_t err) {
+    return calc_get_error_message(err);
 }
 
 /**
@@ -61,14 +60,14 @@ const char *parserGetErrorMessage(CalcError err) {
  * @param err_pos   错误位置（可为 NULL）
  * @return 错误码
  */
-CalcError evaluate(const char *expression, double *result, size_t *err_pos) {
-  /* 参数验证：表达式为空或结果指针为 NULL */
-  if (expression == NULL || *expression == '\0' || result == NULL) {
-    if (err_pos != NULL) {
-      *err_pos = 0;
+calc_error_t evaluate(const char *expression, double *result, size_t *err_pos) {
+    /* 参数验证：表达式为空或结果指针为 NULL */
+    if (expression == NULL || *expression == '\0' || result == NULL) {
+        if (err_pos != NULL) {
+            *err_pos = 0;
+        }
+        return CALC_ERROR_NULL_EXPR;
     }
-    return CALC_ERROR_NULL_EXPR;
-  }
 
-  return parserEvaluateExpression(expression, result, err_pos);
+    return parser_evaluate_expression(expression, result, err_pos);
 }

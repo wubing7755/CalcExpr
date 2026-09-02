@@ -2,7 +2,8 @@
  * test_calculator.c - 计算器单元测试
  *
  * 编译示例:
- *   gcc -o test_calculator test/test_calculator.c src/calculator.c src/lexer.c src/parser.c src/logger.c -Iinclude -lm
+ *   gcc -o test_calculator test/test_calculator.c src/calculator.c src/lexer.c src/parser.c
+ * src/logger.c -Iinclude -lm
  *
  * 运行示例:
  *   ./test_calculator
@@ -10,36 +11,36 @@
  *   ./test_calculator --filter=非法字符
  ******************************************************************************/
 
+#include "calculator.h"
+#include "command.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../include/calculator.h"
-#include "../include/command.h"
 
 #define EPSILON 1e-6
 
 typedef struct {
-    const char* name;
-    const char* expression;
+    const char *name;
+    const char *expression;
     double expected;
-} SuccessCase;
+} success_case_t;
 
 typedef struct {
-    const char* name;
-    const char* expression;
-    CalcError expected_error;
+    const char *name;
+    const char *expression;
+    calc_error_t expected_error;
     int exact_match;
-} ErrorCase;
+} error_case_t;
 
 typedef enum {
     SUITE_SUCCESS = 1 << 0,
     SUITE_ERROR = 1 << 1,
     SUITE_API = 1 << 2,
     SUITE_ALL = SUITE_SUCCESS | SUITE_ERROR | SUITE_API
-} SuiteMask;
+} suite_mask_t;
 
-static const SuccessCase g_success_cases[] = {
+static const success_case_t g_success_cases[] = {
     {"加法", "1+2", 3.0},
     {"减法", "10-3", 7.0},
     {"乘法", "2*3", 6.0},
@@ -54,25 +55,22 @@ static const SuccessCase g_success_cases[] = {
     {"微小非零除数", "1/0.0000000000001", 10000000000000.0},
     {"链式", "100/2/5", 10.0},
     {"复杂表达式", "((1+2)*(3-1))+5", 11.0},
-    {"空格容忍", "  3 + 4 * 2  ", 11.0}
-};
+    {"空格容忍", "  3 + 4 * 2  ", 11.0}};
 
-static const ErrorCase g_error_cases[] = {
-    {"空串", "", CALC_ERROR_NULL_EXPR, 1},
-    {"全空白", "   ", CALC_ERROR_UNEXPECTED_TOKEN, 1},
-    {"直接除零", "1/0", CALC_ERROR_DIV_BY_ZERO, 1},
-    {"间接除零", "1/(2-2)", CALC_ERROR_DIV_BY_ZERO, 1},
-    {"非法字符", "1+a", CALC_ERROR_INVALID_CHAR, 1},
-    {"双小数点", "1..2", CALC_ERROR_INVALID_CHAR, 0},
-    {"缺少右括号", "(1+2", CALC_ERROR_MISSING_RPAREN, 1},
-    {"多余右括号", "(1+2))", CALC_ERROR_SYNTAX, 1},
-    {"尾部运算符", "1+2+", CALC_ERROR_UNEXPECTED_TOKEN, 1},
-    {"孤立右括号", ")", CALC_ERROR_UNEXPECTED_TOKEN, 1},
-    {"多余数字", "1 2", CALC_ERROR_SYNTAX, 1}
-};
+static const error_case_t g_error_cases[] = {{"空串", "", CALC_ERROR_NULL_EXPR, 1},
+                                             {"全空白", "   ", CALC_ERROR_UNEXPECTED_TOKEN, 1},
+                                             {"直接除零", "1/0", CALC_ERROR_DIV_BY_ZERO, 1},
+                                             {"间接除零", "1/(2-2)", CALC_ERROR_DIV_BY_ZERO, 1},
+                                             {"非法字符", "1+a", CALC_ERROR_INVALID_CHAR, 1},
+                                             {"双小数点", "1..2", CALC_ERROR_INVALID_CHAR, 0},
+                                             {"缺少右括号", "(1+2", CALC_ERROR_MISSING_RPAREN, 1},
+                                             {"多余右括号", "(1+2))", CALC_ERROR_SYNTAX, 1},
+                                             {"尾部运算符", "1+2+", CALC_ERROR_UNEXPECTED_TOKEN, 1},
+                                             {"孤立右括号", ")", CALC_ERROR_UNEXPECTED_TOKEN, 1},
+                                             {"多余数字", "1 2", CALC_ERROR_SYNTAX, 1}};
 
-static const char* g_filter = NULL;
-static SuiteMask g_suite_mask = SUITE_ALL;
+static const char *g_filter = NULL;
+static suite_mask_t g_suite_mask = SUITE_ALL;
 static int g_tests_passed = 0;
 static int g_tests_failed = 0;
 static int g_tests_selected = 0;
@@ -83,19 +81,19 @@ static int almost_equal(double lhs, double rhs) {
     return diff <= EPSILON * scale;
 }
 
-static void fail_case(const char* name, const char* expression, const char* reason) {
+static void fail_case(const char *name, const char *expression, const char *reason) {
     printf("  FAIL: %s\n", name);
     printf("    Expression: \"%s\"\n", expression ? expression : "(null)");
     printf("    Reason: %s\n", reason);
     g_tests_failed++;
 }
 
-static void pass_case(const char* name, const char* detail) {
+static void pass_case(const char *name, const char *detail) {
     printf("  PASS: %s (%s)\n", name, detail);
     g_tests_passed++;
 }
 
-static int case_matches_filter(const char* name, const char* expression) {
+static int case_matches_filter(const char *name, const char *expression) {
     if (g_filter == NULL || *g_filter == '\0') {
         return 1;
     }
@@ -108,7 +106,7 @@ static int case_matches_filter(const char* name, const char* expression) {
     return 0;
 }
 
-static int parse_suite(const char* value, SuiteMask* out_mask) {
+static int parse_suite(const char *value, suite_mask_t *out_mask) {
     if (strcmp(value, "all") == 0) {
         *out_mask = SUITE_ALL;
         return 1;
@@ -128,7 +126,7 @@ static int parse_suite(const char* value, SuiteMask* out_mask) {
     return 0;
 }
 
-static void print_usage(const char* prog) {
+static void print_usage(const char *prog) {
     printf("Usage: %s [--suite=all|success|error|api] [--filter=TEXT] [--list] [--help]\n", prog);
 }
 
@@ -151,10 +149,10 @@ static void list_cases(void) {
     printf("  - command-dispatch\n");
 }
 
-static int parse_args(int argc, char** argv) {
+static int parse_args(int argc, char **argv) {
     int i;
     for (i = 1; i < argc; ++i) {
-        const char* arg = argv[i];
+        const char *arg = argv[i];
         if (strcmp(arg, "--help") == 0 || strcmp(arg, "-h") == 0) {
             print_usage(argv[0]);
             return 1;
@@ -201,10 +199,10 @@ static int parse_args(int argc, char** argv) {
     return 0;
 }
 
-static void run_success_case(const SuccessCase* tc) {
+static void run_success_case(const success_case_t *tc) {
     double result = 0.0;
     size_t err_pos = 0;
-    CalcError err = evaluate(tc->expression, &result, &err_pos);
+    calc_error_t err = evaluate(tc->expression, &result, &err_pos);
 
     if (err != CALC_OK) {
         char buffer[160];
@@ -227,10 +225,10 @@ static void run_success_case(const SuccessCase* tc) {
     }
 }
 
-static void run_error_case(const ErrorCase* tc) {
+static void run_error_case(const error_case_t *tc) {
     double result = 0.0;
     size_t err_pos = 0;
-    CalcError err = evaluate(tc->expression, &result, &err_pos);
+    calc_error_t err = evaluate(tc->expression, &result, &err_pos);
 
     if (tc->exact_match) {
         if (err != tc->expected_error) {
@@ -260,7 +258,7 @@ static void run_success_suite(void) {
     size_t i;
     printf("\n=== 成功用例 ===\n");
     for (i = 0; i < sizeof(g_success_cases) / sizeof(g_success_cases[0]); ++i) {
-        const SuccessCase* tc = &g_success_cases[i];
+        const success_case_t *tc = &g_success_cases[i];
         if (!case_matches_filter(tc->name, tc->expression)) {
             continue;
         }
@@ -273,7 +271,7 @@ static void run_error_suite(void) {
     size_t i;
     printf("\n=== 错误用例 ===\n");
     for (i = 0; i < sizeof(g_error_cases) / sizeof(g_error_cases[0]); ++i) {
-        const ErrorCase* tc = &g_error_cases[i];
+        const error_case_t *tc = &g_error_cases[i];
         if (!case_matches_filter(tc->name, tc->expression)) {
             continue;
         }
@@ -284,7 +282,7 @@ static void run_error_suite(void) {
 
 static void run_api_contract_suite(void) {
     size_t err_pos = 0;
-    CalcError err;
+    calc_error_t err;
 
     printf("\n=== API 合约用例 ===\n");
 
@@ -312,7 +310,7 @@ static void run_api_contract_suite(void) {
         const size_t depth = 320;
         const size_t expr_len = depth * 2 + 1;
         double value = 0.0;
-        char* expr = (char*)malloc(expr_len + 1);
+        char *expr = (char *)malloc(expr_len + 1);
         g_tests_selected++;
 
         if (expr == NULL) {
@@ -342,44 +340,45 @@ static void run_api_contract_suite(void) {
     /* Note: step callback tests removed - use DEBUG_ENABLE system instead */
 
     if (case_matches_filter("command-dispatch", "show process")) {
-        CommandState state;
-        CommandResult cmd;
+        command_state_t state;
+        command_result_t cmd;
         g_tests_selected++;
-        commandStateInit(&state);
+        command_state_init(&state);
 
         /* show process 进入交互模式选择级别 */
-        cmd = commandDispatch("show process", &state);
+        cmd = command_dispatch("show process", &state);
         if (cmd != COMMAND_RESULT_HANDLED || state.interactive.mode != INPUT_MODE_DEBUG_LEVEL) {
             fail_case("command-dispatch", "show process", "failed to enter interactive mode");
             return;
         }
 
         /* 用户选择 DEBUG 级别 */
-        commandHandleInteractive("4", &state);
+        command_handle_interactive("4", &state);
         if (!state.show_process) {
-            fail_case("command-dispatch", "show process", "failed to enable process mode after selection");
+            fail_case("command-dispatch", "show process",
+                      "failed to enable process mode after selection");
             return;
         }
 
-        cmd = commandDispatch("hide process", &state);
+        cmd = command_dispatch("hide process", &state);
         if (cmd != COMMAND_RESULT_HANDLED || state.show_process) {
             fail_case("command-dispatch", "hide process", "failed to disable process mode");
             return;
         }
 
-        cmd = commandDispatch("show help", &state);
+        cmd = command_dispatch("show help", &state);
         if (cmd != COMMAND_RESULT_HANDLED) {
             fail_case("command-dispatch", "show help", "failed to execute help command");
             return;
         }
 
-        cmd = commandDispatch("show unknown", &state);
+        cmd = command_dispatch("show unknown", &state);
         if (cmd != COMMAND_RESULT_ERROR) {
             fail_case("command-dispatch", "show unknown", "unknown command did not return error");
             return;
         }
 
-        cmd = commandDispatch("2+3", &state);
+        cmd = command_dispatch("2+3", &state);
         if (cmd != COMMAND_RESULT_NOT_COMMAND) {
             fail_case("command-dispatch", "2+3", "expression was incorrectly treated as command");
             return;
@@ -389,7 +388,7 @@ static void run_api_contract_suite(void) {
     }
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
     int parse_result = parse_args(argc, argv);
     if (parse_result > 0) {
         return 0;
