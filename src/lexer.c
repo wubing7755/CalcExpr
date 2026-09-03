@@ -4,17 +4,17 @@
  *
  * ## 模块职责
  *
- * 词法分析器（Lexer）将输入字符串分解为词素（Token）序列。
+ * 词法分析器（lexer_t）将输入字符串分解为词素（token_t）序列。
  * 它是编译器前端的第一个阶段，位于语法分析之前。
  *
  * ## 核心概念
  *
  * ### 预读模式
- * - 每次调用 lexerNextToken() 获取下一个 Token
- * - 当前 Token 存储在 lexer->current 中
+ * - 每次调用 lexer_next_token() 获取下一个 token_t
+ * - 当前 token_t 存储在 lexer->current 中
  * - 使用预读模式便于处理二元运算符判断
  *
- * ### Token
+ * ### token_t
  * - NUMBER : 数字常量（整数、小数、科学计数法）
  * - PLUS/MINUS/MUL/DIV : 算术运算符
  * - LPAREN/RPAREN : 左右括号
@@ -39,39 +39,53 @@
 #include "calculator.h"
 #include "debug.h"
 
+#if DEBUG_ENABLE
+
 /**
- * @brief Token 类型转字符串（用于调试输出）
+ * @brief token_t 类型转字符串（用于调试输出）
  *
- * @param type Token 类型
+ * @param type token_t 类型
  * @return 字符串形式的类型名
  */
-static const char* tokenTypeName(TokenType type) {
+static const char *token_type_name(token_type_t type) {
     switch (type) {
-        case TOKEN_NUMBER: return "NUM";
-        case TOKEN_PLUS:   return "PLUS";
-        case TOKEN_MINUS:  return "MINUS";
-        case TOKEN_MUL:    return "MUL";
-        case TOKEN_DIV:    return "DIV";
-        case TOKEN_LPAREN: return "LPAREN";
-        case TOKEN_RPAREN: return "RPAREN";
-        case TOKEN_END:    return "END";
-        default:           return "ERROR";
+    case TOKEN_NUMBER:
+        return "NUM";
+    case TOKEN_PLUS:
+        return "PLUS";
+    case TOKEN_MINUS:
+        return "MINUS";
+    case TOKEN_MUL:
+        return "MUL";
+    case TOKEN_DIV:
+        return "DIV";
+    case TOKEN_LPAREN:
+        return "LPAREN";
+    case TOKEN_RPAREN:
+        return "RPAREN";
+    case TOKEN_END:
+        return "END";
+    default:
+        return "ERROR";
     }
 }
 
+#endif /* DEBUG_ENABLE */
+
 /* ========================================================================
- * 预扫描并输出所有 Token
+ * 预扫描并输出所有 token_t
  * ======================================================================== */
 
 #if DEBUG_ENABLE
 
-void lexerDebugPrintAll(Lexer *lexer) {
-    if (g_debug_level < DEBUG_LEVEL_TRACE) return;
+void lexer_debug_print_all(lexer_t *lexer) {
+    if (g_debug_level < DEBUG_LEVEL_TRACE)
+        return;
 
-    TokenType saved_type = lexer->current.type;
+    token_type_t saved_type = lexer->current.type;
     size_t saved_start = lexer->current.start_pos;
     size_t saved_end = lexer->current.end_pos;
-    CalcError saved_err = lexer->err;
+    calc_error_t saved_err = lexer->err;
     size_t saved_err_pos = lexer->err_pos;
     size_t saved_pos = lexer->pos;
 
@@ -82,13 +96,12 @@ void lexerDebugPrintAll(Lexer *lexer) {
     lexer->err = CALC_OK;
 
     while (1) {
-        while (lexer->pos < lexer->length &&
-               isspace((unsigned char)lexer->input[lexer->pos])) {
+        while (lexer->pos < lexer->length && isspace((unsigned char)lexer->input[lexer->pos])) {
             lexer->pos++;
         }
 
         if (lexer->pos >= lexer->length || lexer->input[lexer->pos] == '\0') {
-            printf("%s@%zu", tokenTypeName(TOKEN_END), lexer->pos);
+            printf("%s@%zu", token_type_name(TOKEN_END), lexer->pos);
             break;
         }
 
@@ -97,27 +110,45 @@ void lexerDebugPrintAll(Lexer *lexer) {
         const char *name = NULL;
 
         switch (c) {
-            case '+': name = "PLUS"; lexer->pos++; break;
-            case '-': name = "MINUS"; lexer->pos++; break;
-            case '*': name = "MUL"; lexer->pos++; break;
-            case '/': name = "DIV"; lexer->pos++; break;
-            case '(': name = "LPAREN"; lexer->pos++; break;
-            case ')': name = "RPAREN"; lexer->pos++; break;
-            default:
-                if (isdigit(c) || (c == '.' && start + 1 < lexer->length &&
-                                   isdigit((unsigned char)lexer->input[start + 1]))) {
-                    char *endp = NULL;
-                    strtod(lexer->input + start, &endp);
-                    if (endp > lexer->input + start) {
-                        name = "NUM";
-                        lexer->pos = (size_t)(endp - lexer->input);
-                    } else {
-                        lexer->pos++;
-                    }
+        case '+':
+            name = "PLUS";
+            lexer->pos++;
+            break;
+        case '-':
+            name = "MINUS";
+            lexer->pos++;
+            break;
+        case '*':
+            name = "MUL";
+            lexer->pos++;
+            break;
+        case '/':
+            name = "DIV";
+            lexer->pos++;
+            break;
+        case '(':
+            name = "LPAREN";
+            lexer->pos++;
+            break;
+        case ')':
+            name = "RPAREN";
+            lexer->pos++;
+            break;
+        default:
+            if (isdigit(c) || (c == '.' && start + 1 < lexer->length &&
+                               isdigit((unsigned char)lexer->input[start + 1]))) {
+                char *endp = NULL;
+                strtod(lexer->input + start, &endp);
+                if (endp > lexer->input + start) {
+                    name = "NUM";
+                    lexer->pos = (size_t)(endp - lexer->input);
                 } else {
                     lexer->pos++;
                 }
-                break;
+            } else {
+                lexer->pos++;
+            }
+            break;
         }
 
         if (name) {
@@ -151,8 +182,8 @@ void lexerDebugPrintAll(Lexer *lexer) {
  * @param err   错误码
  * @param pos   错误发生位置
  */
-static void lexerSetError(Lexer *lexer, CalcError err, size_t pos) {
-    if (lexer->err == CALC_OK) {  /* 仅记录第一个错误 */
+static void lexer_set_error(lexer_t *lexer, calc_error_t err, size_t pos) {
+    if (lexer->err == CALC_OK) { /* 仅记录第一个错误 */
         lexer->err = err;
         lexer->err_pos = pos;
     }
@@ -171,9 +202,8 @@ static void lexerSetError(Lexer *lexer, CalcError err, size_t pos) {
  *
  * @param lexer 词法分析器
  */
-static void lexerSkipWhitespace(Lexer *lexer) {
-    while (lexer->pos < lexer->length &&
-           isspace((unsigned char)lexer->input[lexer->pos])) {
+static void lexer_skip_whitespace(lexer_t *lexer) {
+    while (lexer->pos < lexer->length && isspace((unsigned char)lexer->input[lexer->pos])) {
         lexer->pos++;
     }
 }
@@ -190,7 +220,7 @@ static void lexerSkipWhitespace(Lexer *lexer) {
  * @param lexer 词法分析器实例
  * @param input 要分析的输入字符串（不复制，仅保存指针）
  */
-void lexerInit(Lexer *lexer, const char *input) {
+void lexer_init(lexer_t *lexer, const char *input) {
     lexer->input = input;
     lexer->length = strlen(input);
     lexer->pos = 0;
@@ -203,11 +233,11 @@ void lexerInit(Lexer *lexer, const char *input) {
 }
 
 /* ========================================================================
- * 核心：词法分析 - 读取下一个 Token
+ * 核心：词法分析 - 读取下一个 token_t
  * ======================================================================== */
 
 /**
- * @brief 获取下一个 Token
+ * @brief 获取下一个 token_t
  *
  * 读取并返回下一个词素。结果存储在 lexer->current 中。
  *
@@ -221,12 +251,12 @@ void lexerInit(Lexer *lexer, const char *input) {
  *
  * @param lexer 词法分析器实例
  */
-void lexerNextToken(Lexer *lexer) {
+void lexer_next_token(lexer_t *lexer) {
     if (lexer->err != CALC_OK) {
         return;
     }
 
-    lexerSkipWhitespace(lexer);
+    lexer_skip_whitespace(lexer);
 
     if (lexer->pos >= lexer->length || lexer->input[lexer->pos] == '\0') {
         lexer->current.type = TOKEN_END;
@@ -300,12 +330,12 @@ void lexerNextToken(Lexer *lexer) {
             const double value = strtod(lexer->input + start, &endp);
 
             if (endp == lexer->input + start) {
-                lexerSetError(lexer, CALC_ERROR_INVALID_CHAR, start);
+                lexer_set_error(lexer, CALC_ERROR_INVALID_CHAR, start);
                 return;
             }
 
             if (errno == ERANGE || !isfinite(value)) {
-                lexerSetError(lexer, CALC_ERROR_NUMBER_OVERFLOW, start);
+                lexer_set_error(lexer, CALC_ERROR_NUMBER_OVERFLOW, start);
                 return;
             }
 
@@ -318,6 +348,6 @@ void lexerNextToken(Lexer *lexer) {
         }
 
         lexer->pos++;
-        lexerSetError(lexer, CALC_ERROR_INVALID_CHAR, start);
+        lexer_set_error(lexer, CALC_ERROR_INVALID_CHAR, start);
     }
 }

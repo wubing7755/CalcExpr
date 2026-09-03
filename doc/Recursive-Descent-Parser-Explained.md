@@ -43,10 +43,10 @@ The expression `9*8-1` can be represented as a **syntax tree**:
 **Use function calls to build and traverse the tree**
 
 ```c
-parseExpression()  → creates (-) node
-    └─ parseTerm()  → creates (*) node
-            ├─ parseUnary() → returns 9
-            └─ parseUnary() → returns 8
+parse_expression()  → creates (-) node
+    └─ parse_term()  → creates (*) node
+            ├─ parse_unary() → returns 9
+            └─ parse_unary() → returns 8
 ```
 
 Each grammar rule corresponds to a function, and functions call each other to "分解" (decompose) the expression.
@@ -111,15 +111,15 @@ Expression ::= Term { ('+' | '-') Term }
 
 ```c
 // Pseudocode
-double parseExpression() {
+double parse_expression() {
     // Step 1: Get first operand
-    left = parseTerm();
+    left = parse_term();
 
     // Step 2: Loop to process subsequent operators
     while (current token is + or -) {
         op = current operator;
-        parserNextToken();       // Consume operator
-        right = parseTerm();     // Get right operand
+        parser_next_token();       // Consume operator
+        right = parse_term();     // Get right operand
         left = applyOp(left, op, right);  // Calculate and update left
     }
 
@@ -165,16 +165,16 @@ Because parentheses **change precedence**:
 **Key: When encountering `(`, recursively call the parser itself**
 
 ```c
-double parsePrimary() {
+double parse_primary() {
     if (is number) {
         return number value;
     }
 
     if (is '(') {
-        parserNextToken();              // Consume '('
-        value = parseExpression();       // ⚡ Recursion! Restart from Expression
+        parser_next_token();              // Consume '('
+        value = parse_expression();       // ⚡ Recursion! Restart from Expression
         // At this point, the expression inside parentheses is fully parsed
-        parserNextToken();              // Consume ')'
+        parser_next_token();              // Consume ')'
         return value;
     }
 }
@@ -190,12 +190,12 @@ Main flow (Expression):
         ├─ Unary:
         │     └─ Primary: encounters '('
         │           ├─ Consume '('
-        │           ├─ Recursively call parseExpression()
+        │           ├─ Recursively call parse_expression()
         │           │
-        │           │  ⚡ Recursive layer: parseExpression()
-        │           │    ├─ parseTerm() → 9
+        │           │  ⚡ Recursive layer: parse_expression()
+        │           │    ├─ parse_term() → 9
         │           │    ├─ encounter '+'
-        │           │    ├─ parseTerm() → 1
+        │           │    ├─ parse_term() → 1
         │           │    └─ return 9+1=10
         │           │
         │           ├─ Consume ')'
@@ -239,16 +239,16 @@ Unary ::= ('+' | '-')* Primary
 ### 5.3 Code Implementation
 
 ```c
-double parseUnary() {
+double parse_unary() {
     // Step 1: Count minus signs
     int negative_count = 0;
     while (current is + or -) {
         if (is -) negative_count++;
-        parserNextToken();  // Consume operator
+        parser_next_token();  // Consume operator
     }
 
     // Step 2: Get operand (only one recursion)
-    value = parsePrimary();
+    value = parse_primary();
 
     // Step 3: Apply minus sign
     if (negative_count % 2 == 1) {
@@ -268,7 +268,7 @@ Step 1: Count minus signs
   negative_count = 2
 
 Step 2: Get operand
-  parsePrimary() returns 5
+  parse_primary() returns 5
 
 Step 3: Apply minus
   2 % 2 == 0, so don't negate
@@ -284,34 +284,34 @@ Step 3: Apply minus
 Let's trace step by step:
 
 ```
- parseExpression()                                               
-   ├─ Call parseTerm()                                          
-   │     └─ parseTerm():                                        
-   │           ├─ Call parseUnary()                             
-   │           │     └─ parseUnary():                            
+ parse_expression()                                               
+   ├─ Call parse_term()                                          
+   │     └─ parse_term():                                        
+   │           ├─ Call parse_unary()                             
+   │           │     └─ parse_unary():                            
    │           │           ├─ Minus count: 0                     
-   │           │           └─ parsePrimary():                   
+   │           │           └─ parse_primary():                   
    │           │                 ├─ Encounter '('                 
-   │           │                 ├─ Recursively call parseExpression() 
+   │           │                 ├─ Recursively call parse_expression() 
    │           │                 │                                
-   │           │                 │  ⚡ Recursive layer: parseExpression() 
-   │           │                 │    ├─ parseTerm() → 9        
+   │           │                 │  ⚡ Recursive layer: parse_expression() 
+   │           │                 │    ├─ parse_term() → 9        
    │           │                 │    ├─ Encounter '+'            
-   │           │                 │    ├─ parseTerm() → 1         
+   │           │                 │    ├─ parse_term() → 1         
    │           │                 │    └─ Return 9+1=10           
    │           │                 │                                
    │           │                 ├─ Consume ')'                  
    │           │                 └─ Return 10                     
    │           │                                                
    │           ├─ Encounter '*'                                  
-   │           ├─ Call parseUnary() → return 2                  
+   │           ├─ Call parse_unary() → return 2                  
    │           └─ Calculate 10*2 = 20                            
    │                                                             
    ├─ Encounter '-'                                              
-   ├─ Call parseTerm()                                          
-   │     ├─ parseUnary() → 8                                    
+   ├─ Call parse_term()                                          
+   │     ├─ parse_unary() → 8                                    
    │     ├─ Encounter '/'                                         
-   │     ├─ parseUnary() → 4                                    
+   │     ├─ parse_unary() → 4                                    
    │     └─ Calculate 8/4 = 2                                   
    │                                                             
    └─ Calculate 20-2 = 18                                       
@@ -327,7 +327,7 @@ Let's trace step by step:
 
 ```c
 if (is '(') {
-    parseExpression();  // Recursion, fresh start
+    parse_expression();  // Recursion, fresh start
 }
 ```
 
@@ -387,29 +387,29 @@ Function call relationships in this project's parser:
 
 ```c
 // Main entry point
-parserEvaluateExpression()
+parser_evaluate_expression()
     │
-    ├─ lexerInit()           // Initialize lexer
-    ├─ parserNextToken()     // Get first token
+    ├─ lexer_init()           // Initialize lexer
+    ├─ parser_next_token()     // Get first token
     │
-    └─ parseExpression()     // ⚡ Start recursive descent
+    └─ parse_expression()     // ⚡ Start recursive descent
             │
-            ├─ parseTerm()
+            ├─ parse_term()
             │       │
-            │       └─ parseUnary()
+            │       └─ parse_unary()
             │               │
-            │               └─ parsePrimary()
+            │               └─ parse_primary()
             │                       │
             │                       ├─ Return number
-            │                       └─ Or recursively call parseExpression() for parentheses
+            │                       └─ Or recursively call parse_expression() for parentheses
             │
             ├─ while (is * or /)
-            │       ├─ parseUnary()
-            │       └─ applyMul/applyDiv()
+            │       ├─ parse_unary()
+            │       └─ apply_mul/apply_div()
             │
             └─ while (is + or -)
-                    ├─ parseTerm()
-                    └─ applyAdd/applySub()
+                    ├─ parse_term()
+                    └─ apply_add/apply_sub()
 ```
 
 ---
@@ -427,21 +427,21 @@ parserEvaluateExpression()
 Input `(9+1)*2` with TRACE level enabled:
 
 ```
-[PARSER] → parseExpression()
-[PARSER] → parseTerm()
-[PARSER] → parseUnary()
-[PARSER] → parsePrimary()
-[PARSER]   → parseExpression()    ← Parentheses recursion, depth=1
-[PARSER]   → parseTerm()
-[PARSER]   → parseUnary()
-[PARSER]   → parsePrimary()
+[PARSER] → parse_expression()
+[PARSER] → parse_term()
+[PARSER] → parse_unary()
+[PARSER] → parse_primary()
+[PARSER]   → parse_expression()    ← Parentheses recursion, depth=1
+[PARSER]   → parse_term()
+[PARSER]   → parse_unary()
+[PARSER]   → parse_primary()
 [PARSER] [Step 1] Read number 9
-[PARSER]   → parseUnary()
-[PARSER]   → parsePrimary()
+[PARSER]   → parse_unary()
+[PARSER]   → parse_primary()
 [PARSER] [Step 2] Read number 1
 [PARSER] [Step 3] 9 + 1 = 10
-[PARSER] → parseUnary()
-[PARSER] → parsePrimary()
+[PARSER] → parse_unary()
+[PARSER] → parse_primary()
 [PARSER] [Step 4] Read number 2
 [PARSER] [Step 5] 10 * 2 = 20
 ```
@@ -459,7 +459,7 @@ Recursive descent parsing is an intuitive and efficient parsing technique, espec
 
 Key takeaways:
 1. **Layering corresponds to priority**: Expression < Term < Unary < Primary
-2. **Recursion for parentheses**: When encountering `(`, recursively call `parseExpression()`
+2. **Recursion for parentheses**: When encountering `(`, recursively call `parse_expression()`
 3. **Loops for operator chains**: Operators of the same priority are processed sequentially with loops
 4. **Iteration for unary operators**: Use counters instead of recursion to avoid stack overflow
 

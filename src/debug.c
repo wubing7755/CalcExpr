@@ -3,10 +3,10 @@
  * @brief 调试系统运行时实现
  */
 
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdarg.h>
 #include <time.h>
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -21,10 +21,10 @@
  * 全局状态
  * ======================================================================== */
 
-int      g_debug_level = DEBUG_LEVEL_NONE;
+int g_debug_level = DEBUG_LEVEL_NONE;
 unsigned g_debug_modules = 0;
-bool     g_debug_color = true;
-FILE    *g_debug_output = NULL;
+bool g_debug_color = true;
+FILE *g_debug_output = NULL;
 
 /* ========================================================================
  * 内部辅助
@@ -46,12 +46,18 @@ static bool is_terminal(void) {
  */
 static const char *level_tag(int level) {
     switch (level) {
-        case DEBUG_LEVEL_ERROR: return "ERROR";
-        case DEBUG_LEVEL_WARN:  return "WARN ";
-        case DEBUG_LEVEL_INFO:  return "INFO ";
-        case DEBUG_LEVEL_DEBUG: return "DEBUG";
-        case DEBUG_LEVEL_TRACE: return "TRACE";
-        default:                 return "?????";
+    case DEBUG_LEVEL_ERROR:
+        return "ERROR";
+    case DEBUG_LEVEL_WARN:
+        return "WARN ";
+    case DEBUG_LEVEL_INFO:
+        return "INFO ";
+    case DEBUG_LEVEL_DEBUG:
+        return "DEBUG";
+    case DEBUG_LEVEL_TRACE:
+        return "TRACE";
+    default:
+        return "?????";
     }
 }
 
@@ -59,14 +65,21 @@ static const char *level_tag(int level) {
  * @brief 获取级别的颜色代码
  */
 static const char *level_color(int level) {
-    if (!g_debug_color) return "";
+    if (!g_debug_color)
+        return "";
     switch (level) {
-        case DEBUG_LEVEL_ERROR: return DEBUG_ANSI_RED DEBUG_ANSI_BOLD;
-        case DEBUG_LEVEL_WARN:  return DEBUG_ANSI_YELLOW;
-        case DEBUG_LEVEL_INFO:  return DEBUG_ANSI_GREEN;
-        case DEBUG_LEVEL_DEBUG: return DEBUG_ANSI_BLUE;
-        case DEBUG_LEVEL_TRACE: return DEBUG_ANSI_CYAN;
-        default:                return DEBUG_ANSI_RESET;
+    case DEBUG_LEVEL_ERROR:
+        return DEBUG_ANSI_RED DEBUG_ANSI_BOLD;
+    case DEBUG_LEVEL_WARN:
+        return DEBUG_ANSI_YELLOW;
+    case DEBUG_LEVEL_INFO:
+        return DEBUG_ANSI_GREEN;
+    case DEBUG_LEVEL_DEBUG:
+        return DEBUG_ANSI_BLUE;
+    case DEBUG_LEVEL_TRACE:
+        return DEBUG_ANSI_CYAN;
+    default:
+        return DEBUG_ANSI_RESET;
     }
 }
 
@@ -75,12 +88,18 @@ static const char *level_color(int level) {
  */
 static const char *module_tag(unsigned module) {
     switch (module) {
-        case DEBUG_MODULE_LEXER:  return "[LEXER] ";
-        case DEBUG_MODULE_PARSER: return "[PARSER]";
-        case DEBUG_MODULE_CALC:   return "[CALC]  ";
-        case DEBUG_MODULE_MAIN:   return "[MAIN]  ";
-        case DEBUG_MODULE_CORE:   return "[CORE]  ";
-        default:                  return "[       ]";
+    case DEBUG_MODULE_LEXER:
+        return "[LEXER] ";
+    case DEBUG_MODULE_PARSER:
+        return "[PARSER]";
+    case DEBUG_MODULE_CALC:
+        return "[CALC]  ";
+    case DEBUG_MODULE_MAIN:
+        return "[MAIN]  ";
+    case DEBUG_MODULE_CORE:
+        return "[CORE]  ";
+    default:
+        return "[       ]";
     }
 }
 
@@ -126,16 +145,17 @@ bool debug_parse_args(int argc, char *argv[]) {
         }
         /* -l, --debug-level=N: 设置级别 */
         else if (strncmp(arg, "-l", 2) == 0) {
-            int lvl = atoi(arg + 2);
-            if (lvl >= 0 && lvl <= 5) {
-                g_debug_level = lvl;
+            char *end = NULL;
+            long lvl = strtol(arg + 2, &end, 10);
+            if (end != arg + 2 && *end == '\0' && lvl >= 0 && lvl <= 5) {
+                g_debug_level = (int)lvl;
                 activated = true;
             }
-        }
-        else if (strncmp(arg, "--debug-level=", 14) == 0) {
-            int lvl = atoi(arg + 14);
-            if (lvl >= 0 && lvl <= 5) {
-                g_debug_level = lvl;
+        } else if (strncmp(arg, "--debug-level=", 14) == 0) {
+            char *end = NULL;
+            long lvl = strtol(arg + 14, &end, 10);
+            if (end != arg + 14 && *end == '\0' && lvl >= 0 && lvl <= 5) {
+                g_debug_level = (int)lvl;
                 activated = true;
             }
         }
@@ -154,8 +174,7 @@ bool debug_parse_args(int argc, char *argv[]) {
                 g_debug_modules = DEBUG_MODULE_ALL;
             }
             activated = true;
-        }
-        else if (strncmp(arg, "--debug-module=", 14) == 0) {
+        } else if (strncmp(arg, "--debug-module=", 14) == 0) {
             const char *mod = arg + 14;
             if (strcmp(mod, "lexer") == 0) {
                 g_debug_modules = DEBUG_MODULE_LEXER;
@@ -211,8 +230,7 @@ void debug_set_output(FILE *fp) {
  * 核心输出函数
  * ======================================================================== */
 
-void debug_log(int level, unsigned module,
-               const char *file, int line, const char *func,
+void debug_log(int level, unsigned module, const char *file, int line, const char *func,
                const char *format, ...) {
     FILE *out = g_debug_output ? g_debug_output : stderr;
 
@@ -223,13 +241,8 @@ void debug_log(int level, unsigned module,
     const char *reset = g_debug_color ? DEBUG_ANSI_RESET : "";
 
     /* 输出格式：[TIME] [LEVEL] [MODULE] func(): message */
-    fprintf(out, "[%s] %s%s%s %s %s(): ",
-            time_buf,
-            color,
-            level_tag(level),
-            reset,
-            module_tag(module),
-            func);
+    fprintf(out, "[%s] %s%s%s %s %s(): ", time_buf, color, level_tag(level), reset,
+            module_tag(module), func);
 
     va_list args;
     va_start(args, format);
@@ -240,8 +253,8 @@ void debug_log(int level, unsigned module,
     fflush(out);
 }
 
-void debug_trace(const char *file, int line, const char *func,
-                 unsigned module, bool is_entry, double result) {
+void debug_trace(const char *file, int line, const char *func, unsigned module, bool is_entry,
+                 double result) {
     FILE *out = g_debug_output ? g_debug_output : stderr;
 
     const char *color = level_color(DEBUG_LEVEL_TRACE);
@@ -249,19 +262,16 @@ void debug_trace(const char *file, int line, const char *func,
     const char *tag = is_entry ? "ENTER" : "EXIT";
     const char *fname = file;
     const char *p = strrchr(file, '/');
-    if (p) fname = p + 1;
+    if (p)
+        fname = p + 1;
 #if defined(_WIN32) || defined(_WIN64)
     p = strrchr(file, '\\');
-    if (p) fname = p + 1;
+    if (p)
+        fname = p + 1;
 #endif
-    (void)module;  /* 未使用，但保留参数以匹配宏签名 */
+    (void)module; /* 未使用，但保留参数以匹配宏签名 */
 
-    fprintf(out, "%s[TRACE]%s %s %s:%d %s()",
-            color, reset,
-            tag,
-            fname,
-            line,
-            func);
+    fprintf(out, "%s[TRACE]%s %s %s:%d %s()", color, reset, tag, fname, line, func);
 
     if (!is_entry) {
         fprintf(out, " => %.10g", result);

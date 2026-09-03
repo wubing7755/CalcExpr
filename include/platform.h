@@ -1,7 +1,7 @@
 /**
  * @file platform.h
  * @brief 平台适配层头文件
- * 
+ *
  * 提供跨平台的统一接口,隐藏不同平台之间的差异
  */
 
@@ -17,9 +17,9 @@
  * @brief Windows 平台标识
  */
 #ifdef PLATFORM_WINDOWS
-    #define PLATFORM_IS_WINDOWS 1
+#define PLATFORM_IS_WINDOWS 1
 #else
-    #define PLATFORM_IS_WINDOWS 0
+#define PLATFORM_IS_WINDOWS 0
 #endif
 
 /**
@@ -27,9 +27,9 @@
  * @brief Linux 平台标识
  */
 #ifdef PLATFORM_LINUX
-    #define PLATFORM_IS_LINUX 1
+#define PLATFORM_IS_LINUX 1
 #else
-    #define PLATFORM_IS_LINUX 0
+#define PLATFORM_IS_LINUX 0
 #endif
 
 /**
@@ -37,17 +37,17 @@
  * @brief macOS 平台标识
  */
 #ifdef PLATFORM_MACOS
-    #define PLATFORM_IS_MACOS 1
+#define PLATFORM_IS_MACOS 1
 #else
-    #define PLATFORM_IS_MACOS 0
+#define PLATFORM_IS_MACOS 0
 #endif
 
 /* ========================================================================
  * 跨平台类型定义
  * ======================================================================== */
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 /* ========================================================================
  * 跨平台函数声明
@@ -68,7 +68,7 @@ void platform_cleanup(void);
  * @brief 获取平台名称
  * @return 平台名称字符串
  */
-const char* platform_get_name(void);
+const char *platform_get_name(void);
 
 /**
  * @brief 获取当前时间戳(毫秒)
@@ -84,7 +84,7 @@ void platform_sleep_ms(uint32_t ms);
 
 /**
  * @brief 启用 UTF-8 控制台输出
- * 
+ *
  * 确保控制台正确输出 UTF-8 编码的中文字符
  */
 void platform_enable_utf8(void);

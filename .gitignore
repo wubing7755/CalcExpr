@@ -76,6 +76,8 @@ CMakeCache.txt
 cmake_install.cmake
 Makefile
 compile_commands.json
+CMakeUserPresets.json
+Testing/
 
 # Agent
 .claude/

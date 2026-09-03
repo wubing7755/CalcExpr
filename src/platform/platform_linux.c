@@ -3,55 +3,49 @@
  * @brief Linux 平台特定实现
  */
 
-/* 
+/*
  * 定义 POSIX 特性宏以启用 clock_gettime 和 usleep
  * 必须在所有 include 之前定义
  */
 #define _POSIX_C_SOURCE 199309L
 
 #include "platform.h"
-#include <unistd.h>
-#include <time.h>
-#include <stdio.h>
 #include <locale.h>
+#include <stdio.h>
+#include <time.h>
+#include <unistd.h>
 
 /* ========================================================================
  * 公共函数实现
  * ======================================================================== */
 
-int platform_init(void)
-{
+int platform_init(void) {
     /* Linux 平台初始化 - 当前无需特殊处理 */
     return 0;
 }
 
-void platform_cleanup(void)
-{
+void platform_cleanup(void) {
     /* Linux 平台清理 - 当前无需特殊处理 */
 }
 
-const char* platform_get_name(void)
-{
+const char *platform_get_name(void) {
     return "Linux";
 }
 
-uint64_t platform_get_tick_ms(void)
-{
+uint64_t platform_get_tick_ms(void) {
     struct timespec ts;
-    
+
     clock_gettime(CLOCK_MONOTONIC, &ts);
-    
+
     /* 转换为毫秒 */
-    return (uint64_t)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+    return (uint64_t)ts.tv_sec * 1000U + (uint64_t)ts.tv_nsec / 1000000U;
 }
 
-void platform_sleep_ms(uint32_t ms)
-{
-    usleep(ms * 1000);  /* usleep 接受微秒 */
+void platform_sleep_ms(uint32_t ms) {
+    usleep(ms * 1000); /* usleep 接受微秒 */
 }
 
-void platform_enable_utf8(void)
-{
+void platform_enable_utf8(void) {
     // 设置本地化以支持 UTF-8
     setlocale(LC_ALL, "");
 }
