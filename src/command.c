@@ -14,10 +14,10 @@
  * 使用"规格驱动"的设计模式：
  *   - 定义 command_spec_t 结构存储每个命令的元信息
  *   - 使用静态数组 COMMAND_SPECS 存储所有支持的命令
- *   - 命令处理函数以函数指针形式存储
+ *   - 每个命令通过 command_id_t 标识映射到对应的处理函数
  *
  * 这种设计的优点：
- *   1. 添加新命令只需在数组中添加一项
+ *   1. 添加新命令时，在规格表中登记并补充执行分支
  *   2. 命令逻辑与匹配逻辑分离
  *   3. 代码结构清晰，易于维护
  *
@@ -51,12 +51,17 @@
  * ======================================================================== */
 
 /**
- * @brief 命令处理函数类型
+ * @brief 命令标识
  *
- * 每个命令对应一个处理函数，接收 command_state_t 指针。
- * 处理函数负责修改状态（如设置 should_exit）或输出信息。
+ * 每个命令规格通过该标识映射到具体的处理函数。
+ * 别名命令可以共用同一个标识。
  */
-typedef void (*CommandHandler)(command_state_t *state);
+typedef enum {
+    COMMAND_SHOW_PROCESS, /**< /show process */
+    COMMAND_HIDE_PROCESS, /**< /hide process */
+    COMMAND_SHOW_HELP,    /**< /show help 和 /help */
+    COMMAND_QUIT          /**< /quit、/exit 和 /q */
+} command_id_t;
 
 /**
  * @brief 命令规格结构
@@ -68,14 +73,14 @@ typedef void (*CommandHandler)(command_state_t *state);
  *   - description: 命令描述，用于帮助信息
  *   - tokens     : 命令分词后的词数组
  *   - token_count: 词的数量
- *   - handler    : 命令处理函数指针
+ *   - id         : 命令标识
  */
 typedef struct {
     const char *syntax;        /**< 命令语法 */
     const char *description;   /**< 命令描述（用于帮助） */
     const char *const *tokens; /**< 分词后的词数组 */
     size_t token_count;        /**< 词的数量 */
-    CommandHandler handler;    /**< 处理函数 */
+    command_id_t id;           /**< 命令标识 */
 } command_spec_t;
 
 /* ========================================================================
@@ -278,7 +283,7 @@ static void handle_quit(command_state_t *state) {
  *
  * 显示所有可用命令的列表和说明。
  */
-static void handle_show_help(command_state_t *state);
+static void handle_show_help(const command_state_t *state);
 
 /* ========================================================================
  * 命令规格表
@@ -310,20 +315,20 @@ static const char *TOK_Q[] = {"q"};
  *   description : 命令描述（用于帮助信息）
  *   tokens      : 分词后的词数组
  *   token_count : 词的个数
- *   handler     : 命令处理函数
+ *   id          : 命令标识
  *
  * ## 设计要点
  *   1. 按优先级排列：常用命令放前面
  *   2. 每个命令有多个别名（如 quit、exit、q）
  */
 static const command_spec_t COMMAND_SPECS[] = {
-    {"/show process", "开启计算过程输出", TOK_SHOW_PROCESS, 2U, handle_show_process},
-    {"/hide process", "关闭计算过程输出", TOK_HIDE_PROCESS, 2U, handle_hide_process},
-    {"/show help", "显示命令帮助", TOK_SHOW_HELP, 2U, handle_show_help},
-    {"/help", "显示命令帮助", TOK_HELP, 1U, handle_show_help},
-    {"/quit", "退出程序", TOK_QUIT, 1U, handle_quit},
-    {"/exit", "退出程序", TOK_EXIT, 1U, handle_quit},
-    {"/q", "退出程序", TOK_Q, 1U, handle_quit}};
+    {"/show process", "开启计算过程输出", TOK_SHOW_PROCESS, 2U, COMMAND_SHOW_PROCESS},
+    {"/hide process", "关闭计算过程输出", TOK_HIDE_PROCESS, 2U, COMMAND_HIDE_PROCESS},
+    {"/show help", "显示命令帮助", TOK_SHOW_HELP, 2U, COMMAND_SHOW_HELP},
+    {"/help", "显示命令帮助", TOK_HELP, 1U, COMMAND_SHOW_HELP},
+    {"/quit", "退出程序", TOK_QUIT, 1U, COMMAND_QUIT},
+    {"/exit", "退出程序", TOK_EXIT, 1U, COMMAND_QUIT},
+    {"/q", "退出程序", TOK_Q, 1U, COMMAND_QUIT}};
 
 /* ========================================================================
  * 命令处理函数实现
@@ -334,18 +339,43 @@ static const command_spec_t COMMAND_SPECS[] = {
  *
  * 遍历命令规格表，输出每个命令的语法和描述。
  */
-static void handle_show_help(command_state_t *state) {
-    size_t i;
+static void handle_show_help(const command_state_t *state) {
     (void)state; /* 未使用参数 */
 
     logger_log(LOG_INFO, "【命令列表】\n");
 
     /* 遍历所有命令规格并输出 */
-    for (i = 0; i < sizeof(COMMAND_SPECS) / sizeof(COMMAND_SPECS[0]); ++i) {
+    for (size_t i = 0; i < sizeof(COMMAND_SPECS) / sizeof(COMMAND_SPECS[0]); ++i) {
         logger_log(LOG_INFO, "- %-13s : %s\n", COMMAND_SPECS[i].syntax,
                    COMMAND_SPECS[i].description);
     }
     logger_log(LOG_INFO, "\n");
+}
+
+/**
+ * @brief 根据命令标识执行对应命令
+ *
+ * 集中管理命令标识到处理函数的映射，使命令处理函数可以按需
+ * 使用 const 或非 const 状态指针，而不受函数指针类型限制。
+ *
+ * @param id    命令标识
+ * @param state 命令状态
+ */
+static void execute_command(command_id_t id, command_state_t *state) {
+    switch (id) {
+    case COMMAND_SHOW_PROCESS:
+        handle_show_process(state);
+        break;
+    case COMMAND_HIDE_PROCESS:
+        handle_hide_process(state);
+        break;
+    case COMMAND_SHOW_HELP:
+        handle_show_help(state);
+        break;
+    case COMMAND_QUIT:
+        handle_quit(state);
+        break;
+    }
 }
 
 /* ========================================================================
@@ -395,7 +425,6 @@ command_result_t command_dispatch(const char *input, command_state_t *state) {
     char copy[COMMAND_INPUT_COPY_MAX]; /* 输入副本 */
     char *tokens[COMMAND_MAX_TOKENS];  /* 分词结果 */
     size_t token_count;                /* 分词数量 */
-    size_t i;                          /* 循环计数器 */
 
     /* 参数验证 */
     if (input == NULL || state == NULL) {
@@ -441,9 +470,8 @@ command_result_t command_dispatch(const char *input, command_state_t *state) {
      * 步骤3: 与命令规格表逐一比对
      * ---------------------------------------------------------------
      */
-    for (i = 0; i < sizeof(COMMAND_SPECS) / sizeof(COMMAND_SPECS[0]); ++i) {
+    for (size_t i = 0; i < sizeof(COMMAND_SPECS) / sizeof(COMMAND_SPECS[0]); ++i) {
         const command_spec_t *spec = &COMMAND_SPECS[i];
-        size_t j;
         int match = 1; /* 假设匹配成功 */
 
         /* 首先检查词数是否相同 */
@@ -452,7 +480,7 @@ command_result_t command_dispatch(const char *input, command_state_t *state) {
         }
 
         /* 逐词比较 */
-        for (j = 0; j < spec->token_count; ++j) {
+        for (size_t j = 0; j < spec->token_count; ++j) {
             if (!equals_ignore_case(tokens[j], spec->tokens[j])) {
                 match = 0; /* 有一个词不匹配 */
                 break;     /* 立即退出内层循环 */
@@ -464,7 +492,7 @@ command_result_t command_dispatch(const char *input, command_state_t *state) {
             /* 保存原始输入供处理器解析参数 */
             state->last_input = input;
             /* 调用命令处理函数 */
-            spec->handler(state);
+            execute_command(spec->id, state);
             return COMMAND_RESULT_HANDLED;
         }
     }
